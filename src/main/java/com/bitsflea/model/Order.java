@@ -75,6 +75,10 @@ public class Order {
      * 延期收货次数
      */
     public int delayedCount;
+    /**
+     * 订单完成或取消后超过这个时间则可能被清理
+     */
+    public long clearTime = 0;
 
     /**
      * 订单状态

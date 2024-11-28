@@ -6,7 +6,10 @@ import static io.nuls.contract.sdk.Utils.assetDecimals;
 
 import java.math.BigInteger;
 import java.util.HashMap;
+import java.util.Iterator;
+import java.util.LinkedHashMap;
 import java.util.Map;
+import java.util.Map.Entry;
 
 import com.bitsflea.events.CancelOrderEvent;
 import com.bitsflea.events.ConfirmReceiptEvent;
@@ -16,13 +19,17 @@ import com.bitsflea.events.PayOrderEvent;
 import com.bitsflea.events.PublishProductEvent;
 import com.bitsflea.events.RegUserEvent;
 import com.bitsflea.events.ReturnEvent;
+import com.bitsflea.events.ReviewProductEvent;
 import com.bitsflea.events.ShipmentsEvent;
+import com.bitsflea.events.VoteReviewerEvent;
 import com.bitsflea.interfaces.IMarket;
 import com.bitsflea.interfaces.INRC1363Receiver;
+import com.bitsflea.interfaces.IPlatform;
 import com.bitsflea.interfaces.IUser;
 import com.bitsflea.model.Global;
 import com.bitsflea.model.Order;
 import com.bitsflea.model.Product;
+import com.bitsflea.model.ProductAudit;
 import com.bitsflea.model.ProductReturn;
 import com.bitsflea.model.Reviewer;
 import com.bitsflea.model.Coin;
@@ -38,13 +45,12 @@ import io.nuls.contract.sdk.annotation.JSONSerializable;
 import io.nuls.contract.sdk.annotation.Payable;
 import io.nuls.contract.sdk.annotation.PayableMultyAsset;
 import io.nuls.contract.sdk.annotation.View;
-import io.nuls.contract.sdk.event.DebugEvent;
 import io.nuls.contract.sdk.token.NRC20Wrapper;
 
 /**
  * 部署前必须先部署平台积分合约
  */
-public class BitsFlea extends Ownable implements Contract, IUser, IMarket, INRC1363Receiver {
+public class BitsFlea extends Ownable implements Contract, IPlatform, IUser, IMarket, INRC1363Receiver {
 
     /**
      * 平台积分小数位数
@@ -65,7 +71,7 @@ public class BitsFlea extends Ownable implements Contract, IUser, IMarket, INRC1
     /**
      * 订单数据
      */
-    private Map<BigInteger, Order> orders;
+    private LinkedHashMap<BigInteger, Order> orders;
     /**
      * 用户数据
      */
@@ -74,6 +80,10 @@ public class BitsFlea extends Ownable implements Contract, IUser, IMarket, INRC1
      * 评审员数据
      */
     private Map<Address, Reviewer> reviewers;
+    /**
+     * 商品审核记录
+     */
+    private Map<BigInteger, ProductAudit> productAudits;
     /**
      * 退货数据
      */
@@ -93,6 +103,7 @@ public class BitsFlea extends Ownable implements Contract, IUser, IMarket, INRC1
     private static final BigInteger DENOMINATOR = BigInteger.valueOf(1000);
     /**
      * 定义链id
+     * 部署前必须修改此设置
      */
     private static final int CHAIN_ID = 2;
 
@@ -101,7 +112,8 @@ public class BitsFlea extends Ownable implements Contract, IUser, IMarket, INRC1
         products = new HashMap<BigInteger, Product>();
         users = new HashMap<Address, User>();
         reviewers = new HashMap<Address, Reviewer>();
-        orders = new HashMap<BigInteger, Order>();
+        productAudits = new HashMap<BigInteger, ProductAudit>();
+        orders = new LinkedHashMap<BigInteger, Order>();
         returnList = new HashMap<BigInteger, ProductReturn>();
 
         coins = new HashMap<String, Coin>();
@@ -111,6 +123,41 @@ public class BitsFlea extends Ownable implements Contract, IUser, IMarket, INRC1
         pointDecimals = point.decimals();
 
         incomeTokens = new HashMap<String, MultyAssetValue>();
+    }
+
+    /**
+     * 添加要支持的新asset,或者设置rate
+     * 平台所有者才能调用
+     * 
+     * @param assetChainId
+     * @param assetId
+     * @param rate
+     */
+    public void addCoin(Integer assetChainId, Integer assetId, short rate) {
+        require(rate >= 0 && rate <= DENOMINATOR.intValue(), Error.PARAMETER_ERROR);
+
+        onlyOwner();
+
+        String key = assetChainId.toString() + "-" + assetId.toString();
+        if (coins.containsKey(key)) { // 设置rate
+            Coin coin = coins.get(key);
+            coin.transactionAwardRate = rate;
+        } else { // 添加
+            Coin coin = new Coin(assetChainId, assetId, rate);
+            coins.put(key, coin);
+        }
+    }
+
+    @View
+    @JSONSerializable
+    public Map<String, MultyAssetValue> getIncomeTokens() {
+        return incomeTokens;
+    }
+
+    @View
+    @JSONSerializable
+    public Map<String, Coin> getCoins() {
+        return coins;
     }
 
     @View
@@ -203,8 +250,15 @@ public class BitsFlea extends Ownable implements Contract, IUser, IMarket, INRC1
         user.nickname = nickname;
         user.phoneHash = phoneHash;
         user.phoneEncrypt = phoneEncrypt;
+        // 处理引荐
         if (referrer != null) {
-            user.referrer = referrer;
+            if (users.containsKey(referrer)) {
+                User refer = users.get(referrer);
+                if (!isLock(refer) && refer.creditValue >= global.creditRefLimit) {
+                    user.referrer = referrer;
+                    referPoints(referrer, global.refAward);
+                }
+            }
         }
         user.uid = uid;
         user.head = head;
@@ -264,6 +318,8 @@ public class BitsFlea extends Ownable implements Contract, IUser, IMarket, INRC1
         Product product = new Product();
         product.postage = Helper.parseAsset(postage);
         product.price = Helper.parseAsset(price);
+        require(coins.containsKey(product.postage.getAssetChainId() + "-" + product.postage.getAssetId()),
+                Error.INVALID_ASSET);
         require(product.price.getAssetChainId() == product.postage.getAssetChainId()
                 && product.price.getAssetId() == product.postage.getAssetId(), Error.INCONSISTENT_PAYMENT_METHODS);
         require(product.postage.getValue().compareTo(BigInteger.ZERO) >= 0
@@ -295,7 +351,7 @@ public class BitsFlea extends Ownable implements Contract, IUser, IMarket, INRC1
         Helper.checkProductId(pid, uid);
         require(products.containsKey(pid), Error.PRODUCT_DOES_NOT_EXIST);
         Product product = products.get(pid);
-        require(product.status == Product.ProductStatus.NORMAL, Error.PRODUCT_NOT_NORMAL_STATUS);
+        require(product.status == Product.ProductStatus.NORMAL, Error.PRODUCT_INVALID_STATUS);
         require(product.uid == uid, Error.PRODUCT_IS_NOT_YOURS);
 
         product.status = Product.ProductStatus.DELISTED;
@@ -312,7 +368,7 @@ public class BitsFlea extends Ownable implements Contract, IUser, IMarket, INRC1
 
         require(products.containsKey(pid), Error.INVALID_PRODUCT_ID);
         Product product = products.get(pid);
-        require(product.status == Product.ProductStatus.NORMAL, Error.PRODUCT_NOT_NORMAL_STATUS);
+        require(product.status == Product.ProductStatus.NORMAL, Error.PRODUCT_INVALID_STATUS);
         require(product.uid != uid, Error.PRODUCT_CANT_BUY_YOUR_OWN);
 
         Order order = new Order();
@@ -344,6 +400,11 @@ public class BitsFlea extends Ownable implements Contract, IUser, IMarket, INRC1
         Order order = orders.get(orderId);
         require(order.buyer == uid, Error.ORDER_IS_NOT_YOURS);
         require(order.status == Order.OrderStatus.OS_PENDING_PAYMENT, Error.INVALID_ORDER_STATUS);
+
+        // 处理信用分
+        if (order.payTimeOut < Block.timestamp()) {
+            subCredit(uid, global.creditPayTimeOut);
+        }
 
         Product product = products.get(pid);
         product.status = Product.ProductStatus.NORMAL;
@@ -419,6 +480,7 @@ public class BitsFlea extends Ownable implements Contract, IUser, IMarket, INRC1
         order.endTime = Block.timestamp();
         order.receiptTime = Block.timestamp();
         order.status = Order.OrderStatus.OS_COMPLETED; // 先修改状态，防止重入
+        order.clearTime = Block.timestamp() + global.clearOrderTime;
 
         Product product = products.get(order.pid);
         product.status = Product.ProductStatus.COMPLETED; // 如果是可以零售时，在这里扣除锁定数量
@@ -439,6 +501,7 @@ public class BitsFlea extends Ownable implements Contract, IUser, IMarket, INRC1
         require(order.seller == uid, Error.ORDER_IS_NOT_YOURS);
 
         order.status = Order.OrderStatus.OS_CANCELLED;
+        order.clearTime = Block.timestamp() + global.clearOrderTime;
 
         ProductReturn pr = returnList.get(orderId);
         require(pr.status == ProductReturn.ReturnStatus.RS_PENDING_RECEIPT, Error.INVALID_RETURN_STATUS);
@@ -546,6 +609,119 @@ public class BitsFlea extends Ownable implements Contract, IUser, IMarket, INRC1
             return true;
         }
         return false;
+    }
+
+    @Override
+    public void voteReviewer(Address reviewer, boolean isSupport) {
+        Address uid = Msg.sender();
+        require(!isLock(uid), Error.USER_LOCKED);
+        require(!uid.equals(reviewer), Error.CANT_VOTE_FOR_YOURSELF);
+        require(reviewers.containsKey(reviewer) && users.containsKey(reviewer), Error.REVIEWER_NOT_EXIST);
+
+        Reviewer rer = reviewers.get(reviewer);
+        require(!rer.voted.containsKey(uid.hashCode()), Error.REVIEWER_YOU_ALREADY_VOTED);
+        if (isSupport) {
+            require(rer.approveCount < 100, Error.REVIEWER_100_CAN_VOTE);
+            rer.approveCount += 1;
+        } else {
+            require(rer.againstCount < 100, Error.REVIEWER_100_CAN_VOTE);
+            rer.againstCount += 1;
+        }
+        rer.voted.put(uid.hashCode(), true);
+        User user = users.get(reviewer);
+        if (rer.approveCount - rer.againstCount > 0) {
+            user.isReviewer = true;
+        } else {
+            user.isReviewer = false;
+        }
+
+        bonusPoints(uid, global.voteAward);
+
+        emit(new VoteReviewerEvent(uid, reviewer, rer.approveCount, rer.againstCount));
+    }
+
+    @Override
+    public void review(BigInteger pid, boolean isDelist, String reasons) {
+        Address uid = Msg.sender();
+        require(!isLock(uid), Error.USER_LOCKED);
+
+        require(products.containsKey(pid), Error.PRODUCT_DOES_NOT_EXIST);
+        require(!productAudits.containsKey(pid), Error.REVIEWER_ALREADY_AUDIT);
+        User user = users.get(uid);
+        require(user.isReviewer, Error.REVIEWER_YOU_ARE_NOT);
+
+        Product product = products.get(pid);
+        require(product.status == Product.ProductStatus.PUBLISH, Error.PRODUCT_INVALID_STATUS);
+        require(product.uid != uid, Error.REVIEWER_FOR_YOURSELF);
+
+        if (isDelist) {
+            require(reasons != null && !reasons.isEmpty(), Error.REVIEWER_NO_REASON);
+            product.status = Product.ProductStatus.DELISTED;
+            subCredit(product.uid, global.creditInvalidPublish);
+        } else {
+            product.status = Product.ProductStatus.NORMAL;
+            addCredit(product.uid, global.creditPublish);
+            bonusPoints(product.uid, global.publishAward);
+        }
+        product.reviewer = uid;
+
+        ProductAudit pa = new ProductAudit();
+        pa.pid = pid;
+        pa.reviewer = uid;
+        pa.isDelist = isDelist;
+        pa.details = reasons;
+        pa.reviewTime = Block.timestamp();
+        productAudits.put(pid, pa);
+
+        // 评审员工资
+        salaryPoints(uid, global.reviewSalaryProduct);
+
+        emit(new ReviewProductEvent(pid, uid));
+    }
+
+    @Override
+    public void cleanOrder() {
+        int sum = 50;
+        int count = 0;
+        int clearCount = 0;
+        Iterator<Entry<BigInteger, Order>> iterator = orders.entrySet().iterator();
+        while (iterator.hasNext() && count < sum) {
+            Order order = iterator.next().getValue();
+            if (order.clearTime <= 0) { // 只清理支付超时的，并扣除信用分
+                if (order.status == Order.OrderStatus.OS_PENDING_PAYMENT && order.payTimeOut < Block.timestamp()) {
+                    subCredit(order.buyer, global.creditPayTimeOut);
+                    iterator.remove();
+                    clearCount++;
+                }
+            } else { // 清理过期不再保留的订单
+                if (order.clearTime < Block.timestamp()) {
+                    iterator.remove();
+                    clearCount++;
+                }
+            }
+            count++;
+        }
+        if (clearCount > 0)
+            bonusPoints(Msg.sender(), global.clearAward);
+    }
+
+    @Override
+    public void applyArbit(Address defendant, long pid, BigInteger orderId, short type, String description) {
+        // TODO Auto-generated method stub
+        // throw new UnsupportedOperationException("Unimplemented method 'applyArbit'");
+    }
+
+    @Override
+    public void inArbit(BigInteger id) {
+        // TODO Auto-generated method stub
+        // throw new UnsupportedOperationException("Unimplemented method 'inArbit'");
+    }
+
+    @Override
+    public void updateArbit(BigInteger id, String proofContent, String results, Address winner) {
+        // TODO Auto-generated method stub
+        // throw new UnsupportedOperationException("Unimplemented method
+        // 'updateArbit'");
     }
 
     /************************************
@@ -668,6 +844,45 @@ public class BitsFlea extends Ownable implements Contract, IUser, IMarket, INRC1
     }
 
     /**
+     * 奖励积分
+     * 
+     * @param to    得奖人
+     * @param value 金额
+     */
+    private void bonusPoints(Address to, BigInteger value) {
+        if (global.sysPool.compareTo(value) >= 0) {
+            global.sysPool = global.sysPool.subtract(value);
+            transfer(to, value, 0, 0);
+        }
+    }
+
+    /**
+     * 发放工资
+     * 
+     * @param to    得薪人
+     * @param value 金额
+     */
+    private void salaryPoints(Address to, BigInteger value) {
+        if (global.salaryPool.compareTo(value) >= 0) {
+            global.salaryPool = global.salaryPool.subtract(value);
+            transfer(to, value, 0, 0);
+        }
+    }
+
+    /**
+     * 发放引荐奖励
+     * 
+     * @param to    引荐人
+     * @param value 金额
+     */
+    private void referPoints(Address to, BigInteger value) {
+        if (global.refPool.compareTo(value) >= 0) {
+            global.refPool = global.refPool.subtract(value);
+            transfer(to, value, 0, 0);
+        }
+    }
+
+    /**
      * 扣取信用分
      * 
      * @param user  用户对象
@@ -745,4 +960,5 @@ public class BitsFlea extends Ownable implements Contract, IUser, IMarket, INRC1
             point.transfer(buyer.uid, val);
         }
     }
+
 }

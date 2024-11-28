@@ -48,6 +48,10 @@ public class Global {
      * 每参与一次投票的奖励
      */
     public BigInteger voteAward = new BigInteger("1000000000");
+    /**
+     * 调用清理数据一次的奖励
+     */
+    public BigInteger clearAward = new BigInteger("1000000000");
 
     /*************************** 信用分相关 *******************************/
     /**
@@ -82,6 +86,14 @@ public class Global {
      * 按时支付加分
      */
     public int creditPay = 2;
+    /**
+     * 成功发布商品加分
+     */
+    public int creditPublish = 1;
+    /**
+     * 发布商品时审核未通过扣分
+     */
+    public int creditInvalidPublish = 5;
 
     /****************************** 评审员相关 ********************************/
     /**
@@ -124,4 +136,8 @@ public class Global {
      * 加密用公钥
      */
     public String encryptKey;
+    /**
+     * 当订单完成或者取消后，只保留的秒数
+     */
+    public int clearOrderTime = 3 * 24 * 60 * 60;
 }

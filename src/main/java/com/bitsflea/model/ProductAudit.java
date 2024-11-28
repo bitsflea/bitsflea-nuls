@@ -1,5 +1,6 @@
 package com.bitsflea.model;
 
+import java.math.BigInteger;
 
 import io.nuls.contract.sdk.Address;
 
@@ -7,14 +8,11 @@ import io.nuls.contract.sdk.Address;
  * 审核商品记录
  */
 public class ProductAudit {
-    /**
-     * 记录id
-     */
-    public int id;
+    
     /**
      * 商品id
      */
-    public long pid;
+    public BigInteger pid;
     /**
      * 审核人地址
      */

@@ -90,6 +90,18 @@ public class Arbitration {
          * 举报其他非法信息
          */
         public static final short AT_ILLEGAL_INFO = 300;
+
+        public static boolean isValid(short val) {
+            switch (val) {
+                case AT_ORDER:
+                case AT_COMPLAINT:
+                case AT_PRODUCT:
+                case AT_ILLEGAL_INFO:
+                    return true;
+                default:
+                    return false;
+            }
+        }
     }
 
     /**

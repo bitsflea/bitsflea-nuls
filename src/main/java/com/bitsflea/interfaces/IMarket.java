@@ -52,6 +52,8 @@ public interface IMarket {
 
     /**
      * 取消订单
+     * 买家取消订单只能在未支付状态
+     * 如果超过支付时间取消会被扣信用分
      * 
      * @param orderId 订单id
      */
