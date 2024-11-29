@@ -25,7 +25,7 @@ public class Arbitration {
     /**
      * 商品id
      */
-    public long pid;
+    public BigInteger pid;
     /**
      * 订单id
      */
@@ -49,14 +49,13 @@ public class Arbitration {
      */
     public String proofContent;
     /**
-     * 仲裁结果，一个存储于IPFS上的json的url
-     * 格式：{description:"",images:[]}
-     */
-    public String results;
-    /**
      * 胜诉方地址
      */
     public Address winner;
+    /**
+     * 创建时间
+     */
+    public long createTime;
     /**
      * 开始时间
      */
@@ -68,7 +67,19 @@ public class Arbitration {
     /**
      * 参与的评审员
      */
-    public List<Reviewer> reviewers;
+    public List<Address> reviewers;
+    /**
+     * 已经投票的评审员
+     */
+    public List<Address> alreadyVoted;
+    /**
+     * 支持原告的票数
+     */
+    public int agreeCount = 0;
+    /**
+     * 支持被告的票数
+     */
+    public int disagreeCount = 0;
 
     /**
      * 仲裁类型枚举
@@ -76,10 +87,11 @@ public class Arbitration {
     public static class ArbitType {
         /**
          * 订单纠纷
+         * 主要为要求退款有争议
          */
         public static final short AT_ORDER = 0;
         /**
-         * 投诉评审员
+         * 投诉评审员或者用户
          */
         public static final short AT_COMPLAINT = 100;
         /**

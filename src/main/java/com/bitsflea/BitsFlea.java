@@ -5,12 +5,15 @@ import static io.nuls.contract.sdk.Utils.require;
 import static io.nuls.contract.sdk.Utils.assetDecimals;
 
 import java.math.BigInteger;
+import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.Iterator;
 import java.util.LinkedHashMap;
 import java.util.Map;
 import java.util.Map.Entry;
 
+import com.bitsflea.events.ApplyArbitEvent;
+import com.bitsflea.events.ArbitUpdateEvent;
 import com.bitsflea.events.CancelOrderEvent;
 import com.bitsflea.events.ConfirmReceiptEvent;
 import com.bitsflea.events.CreateOrderEvent;
@@ -32,6 +35,7 @@ import com.bitsflea.model.Product;
 import com.bitsflea.model.ProductAudit;
 import com.bitsflea.model.ProductReturn;
 import com.bitsflea.model.Reviewer;
+import com.bitsflea.model.Arbitration;
 import com.bitsflea.model.Coin;
 import com.bitsflea.model.User;
 import com.bitsflea.utils.Helper;
@@ -96,6 +100,10 @@ public class BitsFlea extends Ownable implements Contract, IPlatform, IUser, IMa
      * 平台总收入
      */
     private Map<String, MultyAssetValue> incomeTokens;
+    /**
+     * 仲裁数据
+     */
+    private Map<BigInteger, Arbitration> arbits;
 
     /**
      * 用于计算比例的分母
@@ -115,6 +123,7 @@ public class BitsFlea extends Ownable implements Contract, IPlatform, IUser, IMa
         productAudits = new HashMap<BigInteger, ProductAudit>();
         orders = new LinkedHashMap<BigInteger, Order>();
         returnList = new HashMap<BigInteger, ProductReturn>();
+        arbits = new HashMap<BigInteger, Arbitration>();
 
         coins = new HashMap<String, Coin>();
         coins.put("0-0", new Coin(0, 0, (short) 50));
@@ -146,6 +155,12 @@ public class BitsFlea extends Ownable implements Contract, IPlatform, IUser, IMa
             Coin coin = new Coin(assetChainId, assetId, rate);
             coins.put(key, coin);
         }
+    }
+
+    @View
+    @JSONSerializable
+    public Map<BigInteger, Arbitration> getArbits() {
+        return arbits;
     }
 
     @View
@@ -221,22 +236,39 @@ public class BitsFlea extends Ownable implements Contract, IPlatform, IUser, IMa
     /**
      * 生成一个新的商品id
      * 
+     * @param sender 商品所有者地址
      * @return 返回生成的商品id
      */
     @View
-    public BigInteger newProductId() {
-        return BigInteger.valueOf(Msg.sender().hashCode()).shiftLeft(64).or(BigInteger.valueOf(Block.timestamp()));
+    public BigInteger newProductId(Address sender) {
+        return BigInteger.valueOf(sender.hashCode()).shiftLeft(64).or(BigInteger.valueOf(Block.timestamp()));
+    }
+
+    /**
+     * 生成一个新的仲裁id
+     * 
+     * @param plaintiff 原告人地址
+     * @param defendant 被告人地址
+     * @return
+     */
+    @View
+    public BigInteger newArbitId(Address plaintiff, Address defendant) {
+        BigInteger aid = BigInteger.valueOf(plaintiff.hashCode());
+        aid = aid.shiftLeft(96).or(BigInteger.valueOf(defendant.hashCode()));
+        aid = aid.shiftLeft(64).or(BigInteger.valueOf(Block.timestamp()));
+        return aid;
     }
 
     /**
      * 生成一个新的订单id
      * 
-     * @param pid 商品id
+     * @param sender 下单人地址
+     * @param pid    商品id
      * @return 返回生成的订单id
      */
     @View
-    public BigInteger newOrderId(BigInteger pid) {
-        BigInteger oid = BigInteger.valueOf(Msg.sender().hashCode());
+    public BigInteger newOrderId(Address sender, BigInteger pid) {
+        BigInteger oid = BigInteger.valueOf(sender.hashCode());
         oid = oid.shiftLeft(96).or(pid);
         oid = oid.shiftLeft(64).or(BigInteger.valueOf(Block.timestamp()));
         return oid;
@@ -477,14 +509,6 @@ public class BitsFlea extends Ownable implements Contract, IPlatform, IUser, IMa
         require(order.buyer == uid, Error.ORDER_IS_NOT_YOURS);
         require(order.status == Order.OrderStatus.OS_PENDING_RECEIPT, Error.INVALID_ORDER_STATUS);
 
-        order.endTime = Block.timestamp();
-        order.receiptTime = Block.timestamp();
-        order.status = Order.OrderStatus.OS_COMPLETED; // 先修改状态，防止重入
-        order.clearTime = Block.timestamp() + global.clearOrderTime;
-
-        Product product = products.get(order.pid);
-        product.status = Product.ProductStatus.COMPLETED; // 如果是可以零售时，在这里扣除锁定数量
-
         completeOrder(order);
 
         emit(new ConfirmReceiptEvent(orderId, order.seller, order.buyer));
@@ -647,8 +671,7 @@ public class BitsFlea extends Ownable implements Contract, IPlatform, IUser, IMa
 
         require(products.containsKey(pid), Error.PRODUCT_DOES_NOT_EXIST);
         require(!productAudits.containsKey(pid), Error.REVIEWER_ALREADY_AUDIT);
-        User user = users.get(uid);
-        require(user.isReviewer, Error.REVIEWER_YOU_ARE_NOT);
+        require(checkReviewer(uid), Error.REVIEWER_YOU_ARE_NOT);
 
         Product product = products.get(pid);
         require(product.status == Product.ProductStatus.PUBLISH, Error.PRODUCT_INVALID_STATUS);
@@ -706,27 +729,204 @@ public class BitsFlea extends Ownable implements Contract, IPlatform, IUser, IMa
     }
 
     @Override
-    public void applyArbit(Address defendant, long pid, BigInteger orderId, short type, String description) {
-        // TODO Auto-generated method stub
-        // throw new UnsupportedOperationException("Unimplemented method 'applyArbit'");
+    public void applyArbit(Address defendant, BigInteger pid, BigInteger orderId, short type, String description) {
+        Address plaintiff = Msg.sender();
+        require(!isLock(plaintiff), Error.USER_LOCKED);
+
+        require(users.containsKey(defendant), Error.USER_NOT_EXIST);
+        require(Arbitration.ArbitType.isValid(type), Error.ARBIT_INVALID_TYPE);
+        require(description != null && !description.isEmpty(), Error.PARAMETER_ERROR);
+
+        if (type == Arbitration.ArbitType.AT_ORDER) {
+            if (orderId != null) {
+                require(orders.containsKey(orderId), Error.INVALID_ORDER_ID);
+            } else {
+                return;
+            }
+            Order order = orders.get(orderId);
+            if (plaintiff == order.buyer) { // 买家发起仲裁
+                require(order.status == Order.OrderStatus.OS_PENDING_RECEIPT, Error.INVALID_ORDER_STATUS);
+                order.status = Order.OrderStatus.OS_ARBITRATION;
+            } else if (plaintiff == order.seller) { // 卖家发起仲裁
+                require(order.status == Order.OrderStatus.OS_RETURN, Error.INVALID_ORDER_STATUS);
+                require(returnList.containsKey(orderId), Error.INVALID_ORDER_ID);
+                ProductReturn pr = returnList.get(orderId);
+                pr.status = ProductReturn.ReturnStatus.RS_ARBITRATION;
+            } else {
+                return;
+            }
+        } else if (type == Arbitration.ArbitType.AT_COMPLAINT) {
+            User pUser = users.get(plaintiff);
+            require(!pUser.isReviewer, Error.ARBIT_COMPLAINT_ONLY_USER);
+        } else if (type == Arbitration.ArbitType.AT_PRODUCT) {
+            if (pid != null) {
+                require(products.containsKey(pid), Error.INVALID_PRODUCT_ID);
+                Product product = products.get(pid);
+                product.status = Product.ProductStatus.LOCKED;
+            } else {
+                return;
+            }
+        } else if (type == Arbitration.ArbitType.AT_ILLEGAL_INFO) {
+            // 处理一些未定义的信息
+        } else {
+            return;
+        }
+
+        Arbitration arb = new Arbitration();
+        arb.id = newArbitId(plaintiff, defendant);
+        arb.plaintiff = plaintiff;
+        arb.defendant = defendant;
+        arb.pid = pid;
+        arb.orderId = orderId;
+        arb.type = type;
+        arb.status = Arbitration.ArbitStatus.AS_APPLY;
+        arb.description = description;
+        arb.createTime = Block.timestamp();
+        arbits.put(arb.id, arb);
+
+        emit(new ApplyArbitEvent(arb.id, orderId, pid));
     }
 
     @Override
     public void inArbit(BigInteger id) {
-        // TODO Auto-generated method stub
-        // throw new UnsupportedOperationException("Unimplemented method 'inArbit'");
+        Address uid = Msg.sender();
+        require(checkReviewer(uid), Error.REVIEWER_YOU_ARE_NOT);
+        require(arbits.containsKey(id), Error.PARAMETER_ERROR);
+
+        Arbitration arb = arbits.get(id);
+        require(arb.defendant != uid && arb.plaintiff != uid, Error.ARBIT_CANNOT_PARTICIPATE);
+        require(arb.status < Arbitration.ArbitStatus.AS_COMPLETED, Error.ARBIT_INVALID_STATUS);
+
+        if (arb.reviewers == null) {
+            arb.reviewers = new ArrayList<Address>();
+        } else {
+            require(!arb.reviewers.contains(uid), Error.ARBIT_ALREADY_IN);
+        }
+        arb.reviewers.add(uid);
+        if (arb.reviewers.size() >= global.reviewMinCount) {
+            arb.status = Arbitration.ArbitStatus.AS_PROCESSING;
+            arb.startTime = Block.timestamp();
+        } else {
+            arb.status = Arbitration.ArbitStatus.AS_WAIT;
+        }
+
+        emit(new ArbitUpdateEvent(id, uid));
     }
 
     @Override
-    public void updateArbit(BigInteger id, String proofContent, String results, Address winner) {
-        // TODO Auto-generated method stub
-        // throw new UnsupportedOperationException("Unimplemented method
-        // 'updateArbit'");
+    public void updateArbit(BigInteger id, String proofContent) {
+        Address uid = Msg.sender();
+        require(checkReviewer(uid), Error.REVIEWER_YOU_ARE_NOT);
+        require(arbits.containsKey(id), Error.PARAMETER_ERROR);
+
+        Arbitration arb = arbits.get(id);
+        require(arb.status < Arbitration.ArbitStatus.AS_COMPLETED, Error.ARBIT_INVALID_STATUS);
+        if (proofContent != null && !proofContent.isEmpty()) {
+            arb.proofContent = proofContent;
+            emit(new ArbitUpdateEvent(id, uid));
+        }
+    }
+
+    @Override
+    public void voteArbit(BigInteger id, boolean agree) {
+        Address uid = Msg.sender();
+        require(checkReviewer(uid), Error.REVIEWER_YOU_ARE_NOT);
+        require(arbits.containsKey(id), Error.PARAMETER_ERROR);
+
+        Arbitration arb = arbits.get(id);
+        require(arb.status == Arbitration.ArbitStatus.AS_PROCESSING, Error.ARBIT_INVALID_STATUS);
+
+        if (arb.alreadyVoted == null) {
+            arb.alreadyVoted = new ArrayList<Address>();
+        } else {
+            require(!arb.alreadyVoted.contains(uid), Error.ARBIT_ALREADY_VOTED);
+        }
+        if (agree) {
+            arb.agreeCount += 1;
+        } else {
+            arb.disagreeCount += 1;
+        }
+        arb.alreadyVoted.add(uid);
+
+        // 计算投票结果
+        if (arb.alreadyVoted.size() >= arb.reviewers.size() * 2 / 3 + 1) {
+            arb.status = Arbitration.ArbitStatus.AS_COMPLETED;
+            // 判定逻辑，支持原告的票数必须大于支持被告的票数才为原告胜
+            if (arb.agreeCount > arb.disagreeCount) {
+                arb.winner = arb.plaintiff;
+            } else {
+                arb.winner = arb.defendant;
+            }
+            arb.status = Arbitration.ArbitStatus.AS_COMPLETED;
+            arb.endTime = Block.timestamp();
+
+            // 处理对应的数据
+            if (arb.type == Arbitration.ArbitType.AT_ORDER) {
+                Order order = orders.get(arb.orderId);
+                if (arb.winner == order.buyer) { // 买家赢
+                    // 进入退货流程
+                    order.status = Order.OrderStatus.OS_RETURN;
+                    ProductReturn pr = new ProductReturn();
+                    pr.oid = order.oid;
+                    pr.pid = order.pid;
+                    pr.status = ProductReturn.ReturnStatus.RS_PENDING_SHIPMENT;
+                    pr.reasons = arb.description;
+                    pr.createTime = Block.timestamp();
+                    pr.shipTimeOut = Block.timestamp() + global.shipTimeOut;
+                    returnList.put(order.oid, pr);
+                    emit(new ReturnEvent(order.oid, order.pid, uid));
+
+                    // 扣卖家信用分
+                    subCredit(order.seller, global.arbitLosing);
+                } else { // 卖家赢
+                    completeOrder(order);
+
+                    // 扣买家信用分
+                    subCredit(order.buyer, global.arbitLosing);
+                }
+            } else if (arb.type == Arbitration.ArbitType.AT_COMPLAINT) {
+                // 扣被告信用分
+                subCredit(arb.winner == arb.plaintiff ? arb.defendant : arb.plaintiff, global.arbitLosing);
+            } else if (arb.type == Arbitration.ArbitType.AT_PRODUCT) {
+                // 扣除输家信用分
+                subCredit(arb.winner == arb.plaintiff ? arb.defendant : arb.plaintiff, global.arbitLosing);
+                if (arb.winner == arb.plaintiff) {
+                    Product product = products.get(arb.pid);
+                    product.status = Product.ProductStatus.DELISTED;
+                    emit(new DelistProductEvent(arb.pid, uid));
+                }
+            } else if (arb.type == Arbitration.ArbitType.AT_ILLEGAL_INFO) {
+                subCredit(arb.winner == arb.plaintiff ? arb.defendant : arb.plaintiff, global.arbitLosing);
+            }
+        }
+
+        emit(new ArbitUpdateEvent(id, uid));
     }
 
     /************************************
      * 私有方法
      ********************************************/
+
+    /**
+     * 检查是否是评审员
+     * 
+     * @param addr
+     */
+    private boolean checkReviewer(Address addr) {
+        User user = users.get(addr);
+        if (user != null) {
+            if (user.creditValue >= global.creditReviewerLimit) {
+                return user.isReviewer;
+            } else {
+                if (user.isReviewer) {
+                    user.isReviewer = false;
+                    reviewers.remove(addr);
+                }
+            }
+        }
+        return false;
+    }
+
     /**
      * 支付订单(私有方法)
      * 
@@ -761,6 +961,14 @@ public class BitsFlea extends Ownable implements Contract, IPlatform, IUser, IMa
      * @param order 订单对象
      */
     private void completeOrder(Order order) {
+        order.endTime = Block.timestamp();
+        order.receiptTime = Block.timestamp();
+        order.status = Order.OrderStatus.OS_COMPLETED; // 先修改状态，防止重入
+        order.clearTime = Block.timestamp() + global.clearOrderTime;
+
+        Product product = products.get(order.pid);
+        product.status = Product.ProductStatus.COMPLETED; // 如果是可以零售时，在这里扣除锁定数量
+
         User seller = users.get(order.seller);
         User buyer = users.get(order.buyer);
         if (seller != null && seller.uid == order.seller) {

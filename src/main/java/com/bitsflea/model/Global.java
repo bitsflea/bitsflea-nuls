@@ -94,6 +94,10 @@ public class Global {
      * 发布商品时审核未通过扣分
      */
     public int creditInvalidPublish = 5;
+    /**
+     * 仲裁失败方扣分
+     */
+    public int arbitLosing = 100;
 
     /****************************** 评审员相关 ********************************/
     /**

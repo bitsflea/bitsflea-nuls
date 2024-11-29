@@ -40,7 +40,7 @@ public interface IPlatform {
      * @param type        仲裁类型
      * @param description 仲裁内容描述(存储于IPFS的json)
      */
-    void applyArbit(Address defendant, long pid, BigInteger orderId, short type, String description);
+    void applyArbit(Address defendant, BigInteger pid, BigInteger orderId, short type, String description);
 
     /**
      * 评审员参与仲裁
@@ -55,7 +55,14 @@ public interface IPlatform {
      * @param id           仲裁记录id
      * @param proofContent 证明内容
      * @param results      结果描述
-     * @param winner       胜诉方地址
      */
-    void updateArbit(BigInteger id, String proofContent, String results, Address winner);
+    void updateArbit(BigInteger id, String proofContent);
+
+    /**
+     * 为仲裁投票
+     * 
+     * @param id    仲裁记录id
+     * @param agree true 表示支持原告，false表示支持被告
+     */
+    void voteArbit(BigInteger id, boolean agree);
 }

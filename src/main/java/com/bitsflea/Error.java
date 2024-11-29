@@ -151,4 +151,28 @@ public class Error {
      * 商品已经审核
      */
     public static final String REVIEWER_ALREADY_AUDIT = "30008";
+    /**
+     * 无效的仲裁类型
+     */
+    public static final String ARBIT_INVALID_TYPE = "30009";
+    /**
+     * 投诉评审员只能由普通用户发起
+     */
+    public static final String ARBIT_COMPLAINT_ONLY_USER = "30010";
+    /**
+     * 不能参与自己的仲裁处理
+     */
+    public static final String ARBIT_CANNOT_PARTICIPATE = "30011";
+    /**
+     * 无效的仲裁状态
+     */
+    public static final String ARBIT_INVALID_STATUS = "30012";
+    /**
+     * 你已经在仲裁中
+     */
+    public static final String ARBIT_ALREADY_IN = "30013";
+    /**
+     * 你已经投票过了
+     */
+    public static final String ARBIT_ALREADY_VOTED = "30014";
 }
