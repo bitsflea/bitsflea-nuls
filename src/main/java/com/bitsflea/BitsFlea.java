@@ -165,6 +165,12 @@ public class BitsFlea extends Ownable implements Contract, IPlatform, IUser, IMa
 
     @View
     @JSONSerializable
+    public Arbitration getArbit(BigInteger id) {
+        return arbits.get(id);
+    }
+
+    @View
+    @JSONSerializable
     public Map<String, MultyAssetValue> getIncomeTokens() {
         return incomeTokens;
     }
@@ -209,6 +215,12 @@ public class BitsFlea extends Ownable implements Contract, IPlatform, IUser, IMa
     @JSONSerializable
     public Product geProduct(BigInteger pid) {
         return products.get(pid);
+    }
+
+    @View
+    @JSONSerializable
+    public ProductAudit getProductAudit(BigInteger id) {
+        return productAudits.get(id);
     }
 
     /**
