@@ -21,4 +21,12 @@ public class ReviewProductEvent implements Event {
      * 审核人地址
      */
     private Address reviewer;
+    /**
+     * 是否下架商品
+     */
+    private boolean isDelist;
+    /**
+     * 评审时间戳
+     */
+    private long reviewTime;
 }

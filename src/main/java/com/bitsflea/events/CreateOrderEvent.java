@@ -4,6 +4,7 @@ import java.math.BigInteger;
 
 import io.nuls.contract.sdk.Address;
 import io.nuls.contract.sdk.Event;
+import io.nuls.contract.sdk.MultyAssetValue;
 import lombok.AllArgsConstructor;
 import lombok.Data;
 
@@ -29,4 +30,20 @@ public class CreateOrderEvent implements Event {
      * 买家
      */
     private Address buyer;
+    /**
+     * 商品金额
+     */
+    private MultyAssetValue amount;
+    /**
+     * 邮费金额
+     */
+    private MultyAssetValue postage;
+    /**
+     * 创建时间
+     */
+    private long createTime;
+    /**
+     * 支付超时时间
+     */
+    private long payTimeOut;
 }

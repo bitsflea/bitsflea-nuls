@@ -25,4 +25,8 @@ public class CancelOrderEvent implements Event {
      * 买家
      */
     private Address buyer;
+    /**
+     * 取消时间
+     */
+    private long time;
 }

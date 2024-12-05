@@ -2,7 +2,6 @@ package com.bitsflea.events;
 
 import java.math.BigInteger;
 
-import io.nuls.contract.sdk.Address;
 import io.nuls.contract.sdk.Event;
 import lombok.AllArgsConstructor;
 import lombok.Data;
@@ -18,11 +17,15 @@ public class PayOrderEvent implements Event {
      */
     private BigInteger oid;
     /**
-     * 支付金额
+     * 新的状态
      */
-    private BigInteger amount;
+    private short status;
     /**
-     * 支付人
+     * 支付时间
      */
-    private Address payer;
+    private long payTime;
+    /**
+     * 发货超时时间
+     */
+    private long shipTimeOut;
 }

@@ -1,24 +1,22 @@
 package com.bitsflea.events;
 
-import java.math.BigInteger;
-
 import io.nuls.contract.sdk.Address;
 import io.nuls.contract.sdk.Event;
 import lombok.AllArgsConstructor;
 import lombok.Data;
 
 /**
- * 下架商品事件
+ * 创建评审员事件
  */
 @Data
 @AllArgsConstructor
-public class DelistProductEvent implements Event {
+public class CreateReviewerEvent implements Event {
     /**
-     * 商品id
-     */
-    private BigInteger pid;
-    /**
-     * 商品所属人地址
+     * 申请人地址
      */
     private Address uid;
+    /**
+     * 创建时间
+     */
+    private long createTime;
 }

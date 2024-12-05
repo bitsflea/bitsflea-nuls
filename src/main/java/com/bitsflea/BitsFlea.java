@@ -15,8 +15,9 @@ import java.util.Map.Entry;
 import com.bitsflea.events.ApplyArbitEvent;
 import com.bitsflea.events.ArbitUpdateEvent;
 import com.bitsflea.events.CancelOrderEvent;
-import com.bitsflea.events.ConfirmReceiptEvent;
+import com.bitsflea.events.CompleteOrderEvent;
 import com.bitsflea.events.CreateOrderEvent;
+import com.bitsflea.events.CreateReviewerEvent;
 import com.bitsflea.events.DelistProductEvent;
 import com.bitsflea.events.PayOrderEvent;
 import com.bitsflea.events.PublishProductEvent;
@@ -24,6 +25,7 @@ import com.bitsflea.events.RegUserEvent;
 import com.bitsflea.events.ReturnEvent;
 import com.bitsflea.events.ReviewProductEvent;
 import com.bitsflea.events.ShipmentsEvent;
+import com.bitsflea.events.UpdateUserEvent;
 import com.bitsflea.events.VoteReviewerEvent;
 import com.bitsflea.interfaces.IMarket;
 import com.bitsflea.interfaces.INRC1363Receiver;
@@ -132,6 +134,11 @@ public class BitsFlea extends Ownable implements Contract, IPlatform, IUser, IMa
         pointDecimals = point.decimals();
 
         incomeTokens = new HashMap<String, MultyAssetValue>();
+    }
+
+    @View
+    public Integer getHashCode(String addr) {
+        return new Address(addr).hashCode();
     }
 
     /**
@@ -330,6 +337,7 @@ public class BitsFlea extends Ownable implements Contract, IPlatform, IUser, IMa
         if (head != null && !head.isEmpty()) {
             user.head = head;
         }
+        emit(new UpdateUserEvent(uid));
     }
 
     @Override
@@ -345,6 +353,7 @@ public class BitsFlea extends Ownable implements Contract, IPlatform, IUser, IMa
         reviewer.againstCount = 0;
         reviewer.voted = new HashMap<Integer, Boolean>();
         reviewers.put(uid, reviewer);
+        emit(new CreateReviewerEvent(uid, reviewer.createTime));
     }
 
     @Override
@@ -429,7 +438,8 @@ public class BitsFlea extends Ownable implements Contract, IPlatform, IUser, IMa
 
         product.status = Product.ProductStatus.LOCKED;
 
-        emit(new CreateOrderEvent(orderId, pid, order.seller, order.buyer));
+        emit(new CreateOrderEvent(orderId, pid, order.seller, order.buyer, order.amount, order.postage,
+                order.createTime, order.payTimeOut));
     }
 
     @Override
@@ -455,7 +465,7 @@ public class BitsFlea extends Ownable implements Contract, IPlatform, IUser, IMa
 
         orders.remove(orderId);
 
-        emit(new CancelOrderEvent(orderId, pid, uid));
+        emit(new CancelOrderEvent(orderId, pid, uid, Block.timestamp()));
     }
 
     @Override
@@ -480,7 +490,7 @@ public class BitsFlea extends Ownable implements Contract, IPlatform, IUser, IMa
             subCredit(uid, global.creditShipmentsTimeout);
         }
 
-        emit(new ShipmentsEvent(orderId, number));
+        emit(new ShipmentsEvent(orderId, number, order.status, order.shipTime));
     }
 
     @Override
@@ -493,6 +503,7 @@ public class BitsFlea extends Ownable implements Contract, IPlatform, IUser, IMa
 
         Order order = orders.get(orderId);
         require(order.buyer == uid, Error.ORDER_IS_NOT_YOURS);
+        require(order.status == Order.OrderStatus.OS_RETURN, Error.INVALID_ORDER_STATUS);
 
         ProductReturn pr = returnList.get(orderId);
         require(pr.status == ProductReturn.ReturnStatus.RS_PENDING_SHIPMENT, Error.INVALID_RETURN_STATUS);
@@ -507,7 +518,7 @@ public class BitsFlea extends Ownable implements Contract, IPlatform, IUser, IMa
             subCredit(uid, global.creditShipmentsTimeout);
         }
 
-        emit(new ShipmentsEvent(orderId, number));
+        emit(new ShipmentsEvent(orderId, number, pr.status, pr.shipTime));
     }
 
     @Override
@@ -522,8 +533,6 @@ public class BitsFlea extends Ownable implements Contract, IPlatform, IUser, IMa
         require(order.status == Order.OrderStatus.OS_PENDING_RECEIPT, Error.INVALID_ORDER_STATUS);
 
         completeOrder(order);
-
-        emit(new ConfirmReceiptEvent(orderId, order.seller, order.buyer));
     }
 
     @Override
@@ -694,6 +703,9 @@ public class BitsFlea extends Ownable implements Contract, IPlatform, IUser, IMa
             product.status = Product.ProductStatus.DELISTED;
             subCredit(product.uid, global.creditInvalidPublish);
         } else {
+            User user = users.get(uid);
+            user.postsTotal += 1;
+
             product.status = Product.ProductStatus.NORMAL;
             addCredit(product.uid, global.creditPublish);
             bonusPoints(product.uid, global.publishAward);
@@ -711,7 +723,7 @@ public class BitsFlea extends Ownable implements Contract, IPlatform, IUser, IMa
         // 评审员工资
         salaryPoints(uid, global.reviewSalaryProduct);
 
-        emit(new ReviewProductEvent(pid, uid));
+        emit(new ReviewProductEvent(pid, uid, pa.isDelist, pa.reviewTime));
     }
 
     @Override
@@ -796,7 +808,7 @@ public class BitsFlea extends Ownable implements Contract, IPlatform, IUser, IMa
         arb.createTime = Block.timestamp();
         arbits.put(arb.id, arb);
 
-        emit(new ApplyArbitEvent(arb.id, orderId, pid));
+        emit(new ApplyArbitEvent(arb.id));
     }
 
     @Override
@@ -822,7 +834,7 @@ public class BitsFlea extends Ownable implements Contract, IPlatform, IUser, IMa
             arb.status = Arbitration.ArbitStatus.AS_WAIT;
         }
 
-        emit(new ArbitUpdateEvent(id, uid));
+        emit(new ArbitUpdateEvent(id, arb.status, uid));
     }
 
     @Override
@@ -835,7 +847,7 @@ public class BitsFlea extends Ownable implements Contract, IPlatform, IUser, IMa
         require(arb.status < Arbitration.ArbitStatus.AS_COMPLETED, Error.ARBIT_INVALID_STATUS);
         if (proofContent != null && !proofContent.isEmpty()) {
             arb.proofContent = proofContent;
-            emit(new ArbitUpdateEvent(id, uid));
+            emit(new ArbitUpdateEvent(id, arb.status, uid));
         }
     }
 
@@ -912,7 +924,7 @@ public class BitsFlea extends Ownable implements Contract, IPlatform, IUser, IMa
             }
         }
 
-        emit(new ArbitUpdateEvent(id, uid));
+        emit(new ArbitUpdateEvent(id, arb.status, uid));
     }
 
     /************************************
@@ -964,7 +976,7 @@ public class BitsFlea extends Ownable implements Contract, IPlatform, IUser, IMa
             addCredit(order.buyer, global.creditPay);
         }
 
-        emit(new PayOrderEvent(orderId, value.getValue(), Msg.sender()));
+        emit(new PayOrderEvent(orderId, order.status, order.payTime, order.shipTimeOut));
     }
 
     /**
@@ -1000,6 +1012,7 @@ public class BitsFlea extends Ownable implements Contract, IPlatform, IUser, IMa
         settlement(order, seller, buyer);
 
         tradeRewardPoints(order, seller, buyer);
+        emit(new CompleteOrderEvent(order.oid, order.status, order.endTime));
     }
 
     /**
@@ -1122,6 +1135,7 @@ public class BitsFlea extends Ownable implements Contract, IPlatform, IUser, IMa
         if (user.creditValue <= 0) {
             user.status = User.UserStatus.LOCK;
         }
+        emit(new UpdateUserEvent(user.uid));
     }
 
     /**
@@ -1143,6 +1157,7 @@ public class BitsFlea extends Ownable implements Contract, IPlatform, IUser, IMa
      */
     private void addCredit(User user, int value) {
         user.creditValue += value < 0 ? -value : value;
+        emit(new UpdateUserEvent(user.uid));
     }
 
     private void addCredit(Address uid, int value) {

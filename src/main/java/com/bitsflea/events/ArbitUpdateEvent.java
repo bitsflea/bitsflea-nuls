@@ -18,6 +18,10 @@ public class ArbitUpdateEvent implements Event {
      */
     private BigInteger aid;
     /**
+     * 新的状态
+     */
+    private short status;
+    /**
      * 操作者地址
      */
     private Address operator;

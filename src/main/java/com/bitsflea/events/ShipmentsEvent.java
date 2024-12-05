@@ -20,4 +20,12 @@ public class ShipmentsEvent implements Event {
      * 运单号
      */
     private String number;
+    /**
+     * 订单新状态
+     */
+    private short status;
+    /**
+     * 操作时间
+     */
+    private long time;
 }
