@@ -1,0 +1,17 @@
+{
+  "name": "test",
+  "version": "0.0.1",
+  "type": "module",
+  "main": "index.js",
+  "license": "MIT",
+  "dependencies": {
+    "dotenv": "^16.4.7",
+    "nuls-api-v2": "https://github.com/xiangxn/nuls-api-v2.git"
+  },
+  "devDependencies": {
+    "mocha": "^11.0.1"
+  },
+  "scripts": {
+    "test": "mocha index.js"
+  }
+}

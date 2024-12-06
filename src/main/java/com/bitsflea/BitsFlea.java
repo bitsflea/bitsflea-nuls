@@ -106,6 +106,10 @@ public class BitsFlea extends Ownable implements Contract, IPlatform, IUser, IMa
      * 仲裁数据
      */
     private Map<BigInteger, Arbitration> arbits;
+    /**
+     * 已经注册的手机
+     */
+    private Map<String, Boolean> phones;
 
     /**
      * 用于计算比例的分母
@@ -119,6 +123,8 @@ public class BitsFlea extends Ownable implements Contract, IPlatform, IUser, IMa
 
     public BitsFlea() {
         global = new Global();
+        global.encryptKey = "02ebefd8efa16620f80eb79d6b588a93b38239c42722f12177ca40c9fa8ddf78c0";
+        phones = new HashMap<String, Boolean>();
         products = new HashMap<BigInteger, Product>();
         users = new HashMap<Address, User>();
         reviewers = new HashMap<Address, Reviewer>();
@@ -162,6 +168,14 @@ public class BitsFlea extends Ownable implements Contract, IPlatform, IUser, IMa
             Coin coin = new Coin(assetChainId, assetId, rate);
             coins.put(key, coin);
         }
+    }
+
+    @View
+    public boolean checkPhone(String phoneHash) {
+        if (phones.containsKey(phoneHash)) {
+            return phones.get(phoneHash);
+        }
+        return false;
     }
 
     @View
@@ -296,7 +310,8 @@ public class BitsFlea extends Ownable implements Contract, IPlatform, IUser, IMa
     @Override
     public void regUser(String nickname, String phoneHash, String phoneEncrypt, Address referrer, String head) {
         Address uid = Msg.sender();
-        require(!users.containsKey(uid), Error.ALREADY_REGISTERED);
+        require(!users.containsKey(uid) && !phones.containsKey(phoneHash), Error.ALREADY_REGISTERED);
+        
         User user = new User();
         user.nickname = nickname;
         user.phoneHash = phoneHash;
