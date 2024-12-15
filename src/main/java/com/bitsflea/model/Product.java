@@ -107,7 +107,7 @@ public class Product {
     /**
      * 商品分类
      */
-    public class Categories {
+    public static class Categories {
         public int id;
         public String view;
         public int parent;

@@ -37,7 +37,7 @@ public class Error {
     /**
      * 商品id无效
      */
-    public static final String INVALID_PRODUCT_ID = "20003";
+    public static final String PRODUCT_INVALID_ID = "20003";
     /**
      * 销售方式无效
      */
@@ -118,6 +118,14 @@ public class Error {
      * 非法调用合约
      */
     public static final String ILLEGAL_CALL = "20023";
+    /**
+     * 商品类型已经存在
+     */
+    public static final String PRODUCT_CATEGORY_ALREADY_EXISTS = "20024";
+    /**
+     * 无效的商品类型
+     */
+    public static final String PRODUCT_INVALID_CATEGORY = "20025";
 
     /**
      * 不能投自己票

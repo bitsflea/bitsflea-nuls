@@ -4,12 +4,20 @@ import io.nuls.contract.sdk.Address;
 import io.nuls.contract.sdk.MultyAssetValue;
 import static io.nuls.contract.sdk.Utils.require;
 import static io.nuls.contract.sdk.Utils.revert;
+import static io.nuls.contract.sdk.Utils.sha3;
 
 import java.math.BigInteger;
 
 import com.bitsflea.Error;
 
 public class Helper {
+
+    public static BigInteger getHashCode(Address addr) {
+        String hash = sha3(addr.toString().getBytes());
+        BigInteger hc = new BigInteger(hash, 16);
+        return hc.shiftRight(192);
+    }
+
     /**
      * 将以豆号分隔的字符串格式化为MultyAssetValue,
      * 当assetChainId=0,assetId=0时表示平台资产(积分)
@@ -35,9 +43,9 @@ public class Helper {
      * @param uid 发布者地址
      */
     public static void checkProductId(BigInteger pid, Address uid) {
-        int uHash = uid.hashCode();
+        int uHash = getHashCode(uid).intValue();
         int pHash = pid.shiftRight(64).intValue();
-        require(uHash == pHash, Error.INVALID_PRODUCT_ID);
+        require(uHash == pHash, Error.PRODUCT_INVALID_ID);
     }
 
     /**
@@ -48,7 +56,7 @@ public class Helper {
      * @param uid     下单者地址
      */
     public static void checkOrderId(BigInteger orderId, BigInteger pid, Address uid) {
-        int uHash = uid.hashCode();
+        int uHash = getHashCode(uid).intValue();
         int oHash = orderId.shiftRight(160).intValue();
         require(uHash == oHash, Error.INVALID_ORDER_ID);
 
@@ -58,6 +66,7 @@ public class Helper {
 
     /**
      * 从订单id中提取商品id
+     * 
      * @param orderId 订单id
      * @return
      */

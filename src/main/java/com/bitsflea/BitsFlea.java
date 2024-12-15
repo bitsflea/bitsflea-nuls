@@ -12,6 +12,7 @@ import java.util.LinkedHashMap;
 import java.util.Map;
 import java.util.Map.Entry;
 
+import com.bitsflea.events.AddCategoryEvent;
 import com.bitsflea.events.ApplyArbitEvent;
 import com.bitsflea.events.ArbitUpdateEvent;
 import com.bitsflea.events.CancelOrderEvent;
@@ -34,6 +35,7 @@ import com.bitsflea.interfaces.IUser;
 import com.bitsflea.model.Global;
 import com.bitsflea.model.Order;
 import com.bitsflea.model.Product;
+import com.bitsflea.model.Product.Categories;
 import com.bitsflea.model.ProductAudit;
 import com.bitsflea.model.ProductReturn;
 import com.bitsflea.model.Reviewer;
@@ -112,6 +114,11 @@ public class BitsFlea extends Ownable implements Contract, IPlatform, IUser, IMa
     private Map<String, Boolean> phones;
 
     /**
+     * 商品类型
+     */
+    private Map<Integer, Categories> categories;
+
+    /**
      * 用于计算比例的分母
      */
     private static final BigInteger DENOMINATOR = BigInteger.valueOf(1000);
@@ -140,11 +147,12 @@ public class BitsFlea extends Ownable implements Contract, IPlatform, IUser, IMa
         pointDecimals = point.decimals();
 
         incomeTokens = new HashMap<String, MultyAssetValue>();
+        categories = new HashMap<Integer, Categories>();
     }
 
     @View
-    public Integer getHashCode(String addr) {
-        return new Address(addr).hashCode();
+    public Integer getHashCode(Address addr) {
+        return Helper.getHashCode(addr).intValue();
     }
 
     /**
@@ -274,7 +282,8 @@ public class BitsFlea extends Ownable implements Contract, IPlatform, IUser, IMa
      */
     @View
     public BigInteger newProductId(Address sender) {
-        return BigInteger.valueOf(sender.hashCode()).shiftLeft(64).or(BigInteger.valueOf(Block.timestamp()));
+        BigInteger hc = Helper.getHashCode(sender);
+        return hc.shiftLeft(64).or(BigInteger.valueOf(Block.timestamp()));
     }
 
     /**
@@ -286,8 +295,8 @@ public class BitsFlea extends Ownable implements Contract, IPlatform, IUser, IMa
      */
     @View
     public BigInteger newArbitId(Address plaintiff, Address defendant) {
-        BigInteger aid = BigInteger.valueOf(plaintiff.hashCode());
-        aid = aid.shiftLeft(96).or(BigInteger.valueOf(defendant.hashCode()));
+        BigInteger aid = Helper.getHashCode(plaintiff);
+        aid = aid.shiftLeft(96).or(Helper.getHashCode(defendant));
         aid = aid.shiftLeft(64).or(BigInteger.valueOf(Block.timestamp()));
         return aid;
     }
@@ -301,7 +310,7 @@ public class BitsFlea extends Ownable implements Contract, IPlatform, IUser, IMa
      */
     @View
     public BigInteger newOrderId(Address sender, BigInteger pid) {
-        BigInteger oid = BigInteger.valueOf(sender.hashCode());
+        BigInteger oid = Helper.getHashCode(sender);
         oid = oid.shiftLeft(96).or(pid);
         oid = oid.shiftLeft(64).or(BigInteger.valueOf(Block.timestamp()));
         return oid;
@@ -311,7 +320,7 @@ public class BitsFlea extends Ownable implements Contract, IPlatform, IUser, IMa
     public void regUser(String nickname, String phoneHash, String phoneEncrypt, Address referrer, String head) {
         Address uid = Msg.sender();
         require(!users.containsKey(uid) && !phones.containsKey(phoneHash), Error.ALREADY_REGISTERED);
-        
+
         User user = new User();
         user.nickname = nickname;
         user.phoneHash = phoneHash;
@@ -379,6 +388,7 @@ public class BitsFlea extends Ownable implements Contract, IPlatform, IUser, IMa
         require(!isLock(uid), Error.USER_LOCKED);
         Helper.checkProductId(pid, uid);
         require(!products.containsKey(pid), Error.PRODUCT_ALREADY_EXISTS);
+        require(categories.containsKey(category), Error.PRODUCT_INVALID_CATEGORY);
         require(stockCount > 0, Error.TOO_LITTLE_INVENTORY);
         require(Product.SaleMethod.isValid(saleMethod), Error.INVALID_SALE_METHOD);
         require(Product.PickupMethod.isValid(pickupMethod), Error.INVALID_PICKUP_METHOD);
@@ -407,7 +417,7 @@ public class BitsFlea extends Ownable implements Contract, IPlatform, IUser, IMa
         product.pickupMethod = pickupMethod;
         product.publishTime = Block.timestamp();
 
-        this.products.put(product.pid, product);
+        products.put(product.pid, product);
 
         emit(new PublishProductEvent(pid, product.uid));
     }
@@ -434,7 +444,7 @@ public class BitsFlea extends Ownable implements Contract, IPlatform, IUser, IMa
         Helper.checkProductId(pid, uid);
         Helper.checkOrderId(orderId, pid, uid);
 
-        require(products.containsKey(pid), Error.INVALID_PRODUCT_ID);
+        require(products.containsKey(pid), Error.PRODUCT_INVALID_ID);
         Product product = products.get(pid);
         require(product.status == Product.ProductStatus.NORMAL, Error.PRODUCT_INVALID_STATUS);
         require(product.uid != uid, Error.PRODUCT_CANT_BUY_YOUR_OWN);
@@ -464,7 +474,7 @@ public class BitsFlea extends Ownable implements Contract, IPlatform, IUser, IMa
         require(orders.containsKey(orderId), Error.INVALID_ORDER_ID);
 
         BigInteger pid = Helper.getPidByOrderId(orderId);
-        require(products.containsKey(pid), Error.INVALID_PRODUCT_ID);
+        require(products.containsKey(pid), Error.PRODUCT_INVALID_ID);
 
         Order order = orders.get(orderId);
         require(order.buyer == uid, Error.ORDER_IS_NOT_YOURS);
@@ -593,7 +603,7 @@ public class BitsFlea extends Ownable implements Contract, IPlatform, IUser, IMa
         Order order = orders.get(orderId);
         require(order.status == Order.OrderStatus.OS_PENDING_RECEIPT, Error.INVALID_ORDER_STATUS);
 
-        require(products.containsKey(order.pid), Error.INVALID_PRODUCT_ID);
+        require(products.containsKey(order.pid), Error.PRODUCT_INVALID_ID);
         Product product = products.get(order.pid);
         require(product.isReturns, Error.PRODUCT_NOT_SUPPORT_RETURNS);
 
@@ -679,7 +689,7 @@ public class BitsFlea extends Ownable implements Contract, IPlatform, IUser, IMa
         require(reviewers.containsKey(reviewer) && users.containsKey(reviewer), Error.REVIEWER_NOT_EXIST);
 
         Reviewer rer = reviewers.get(reviewer);
-        require(!rer.voted.containsKey(uid.hashCode()), Error.REVIEWER_YOU_ALREADY_VOTED);
+        require(!rer.voted.containsKey(Helper.getHashCode(uid).intValue()), Error.REVIEWER_YOU_ALREADY_VOTED);
         if (isSupport) {
             require(rer.approveCount < 100, Error.REVIEWER_100_CAN_VOTE);
             rer.approveCount += 1;
@@ -687,7 +697,7 @@ public class BitsFlea extends Ownable implements Contract, IPlatform, IUser, IMa
             require(rer.againstCount < 100, Error.REVIEWER_100_CAN_VOTE);
             rer.againstCount += 1;
         }
-        rer.voted.put(uid.hashCode(), true);
+        rer.voted.put(Helper.getHashCode(uid).intValue(), true);
         User user = users.get(reviewer);
         if (rer.approveCount - rer.againstCount > 0) {
             user.isReviewer = true;
@@ -799,7 +809,7 @@ public class BitsFlea extends Ownable implements Contract, IPlatform, IUser, IMa
             require(!pUser.isReviewer, Error.ARBIT_COMPLAINT_ONLY_USER);
         } else if (type == Arbitration.ArbitType.AT_PRODUCT) {
             if (pid != null) {
-                require(products.containsKey(pid), Error.INVALID_PRODUCT_ID);
+                require(products.containsKey(pid), Error.PRODUCT_INVALID_ID);
                 Product product = products.get(pid);
                 product.status = Product.ProductStatus.LOCKED;
             } else {
@@ -1209,6 +1219,21 @@ public class BitsFlea extends Ownable implements Contract, IPlatform, IUser, IMa
             point.transfer(seller.uid, val);
             point.transfer(buyer.uid, val);
         }
+    }
+
+    @Override
+    public void addCategory(int id, String view, int parent) {
+        require(!categories.containsKey(id), Error.PRODUCT_CATEGORY_ALREADY_EXISTS);
+        require(parent == 0 || categories.containsKey(parent), Error.PARAMETER_ERROR);
+        require(view != null && !view.isEmpty(), Error.PARAMETER_ERROR);
+
+        Categories c = new Categories();
+        c.id = id;
+        c.view = view;
+        c.parent = parent;
+        categories.put(id, c);
+
+        emit(new AddCategoryEvent(Msg.sender(), id, view, parent));
     }
 
 }

@@ -6,6 +6,14 @@ import io.nuls.contract.sdk.annotation.Required;
 
 public interface IMarket {
     /**
+     * 添加类型
+     * @param id 类型标识
+     * @param view 显示名称
+     * @param parent 父类型标识
+     */
+    void addCategory(int id, String view, int parent);
+
+    /**
      * 发布商品
      * 
      * @param pid          商品id
@@ -110,8 +118,10 @@ public interface IMarket {
      * @param orderId 订单id
      */
     void reDeferReceipt(@Required BigInteger orderId);
+
     /**
      * 支付订单
+     * 
      * @param orderId 订单id
      */
     void payOrder(BigInteger orderId);

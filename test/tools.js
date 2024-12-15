@@ -4,6 +4,10 @@ import elliptic from "elliptic";
 const Elliptic = elliptic.ec;
 const ec = new Elliptic("secp256k1");
 
+export function sleep(ms) {
+    return new Promise(resolve => setTimeout(resolve, ms));
+}
+
 export function getHash(data) {
     return CryptoJS.SHA256(data).toString(CryptoJS.enc.Hex);
 }
@@ -36,4 +40,22 @@ export function decrypt(priKey, pubKey, encryptedMsg) {
         keyHex,
         { iv: ivFromEncrypted }
     ).toString(CryptoJS.enc.Utf8);
+}
+
+export function getEvent(txResult, eventName = null, contractAddress = null) {
+    if (eventName == null || eventName == "") return null;
+    if ("events" in txResult) {
+        if (contractAddress == null) {
+            contractAddress = txResult.contractAddress;
+        }
+        for (let event of txResult.events) {
+            let str = `"event":"${eventName}"`;
+            if (event.includes(str)) {
+                const obj = JSON.parse(event);
+                if (obj.contractAddress === contractAddress)
+                    return obj
+            }
+        }
+    }
+    return null;
 }
