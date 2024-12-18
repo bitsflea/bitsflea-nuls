@@ -6,7 +6,7 @@ import * as tools from "./tools.js";
 dotenv.config();
 
 const env = process.env;
-const contract = "tNULSeBaMvvyjUG6HWpTXmFVVGpQ8Upcqmo5qG";
+const contract = "tNULSeBaN73dv3qnxNjDFBnNdNp7xyaA2HnzDv";
 const sdk = new NULSAPI({ rpcURL: "http://beta.api.nuls.io/jsonrpc", isBeta: true, accountPri: env.KEY_SENDER });
 
 describe('Bitsflea', function () {
