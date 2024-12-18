@@ -12,10 +12,15 @@ import com.bitsflea.Error;
 
 public class Helper {
 
+    /**
+     * 返回地址hash的前4个字节(32位)
+     * @param addr
+     * @return
+     */
     public static BigInteger getHashCode(Address addr) {
         String hash = sha3(addr.toString().getBytes());
         BigInteger hc = new BigInteger(hash, 16);
-        return hc.shiftRight(192);
+        return hc.shiftRight(224);
     }
 
     /**

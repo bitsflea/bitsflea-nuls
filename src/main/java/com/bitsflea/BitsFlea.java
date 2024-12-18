@@ -2,6 +2,7 @@ package com.bitsflea;
 
 import static io.nuls.contract.sdk.Utils.emit;
 import static io.nuls.contract.sdk.Utils.require;
+import static io.nuls.contract.sdk.Utils.sha3;
 import static io.nuls.contract.sdk.Utils.assetDecimals;
 
 import java.math.BigInteger;
@@ -150,11 +151,6 @@ public class BitsFlea extends Ownable implements Contract, IPlatform, IUser, IMa
         categories = new HashMap<Integer, Categories>();
     }
 
-    @View
-    public Integer getHashCode(Address addr) {
-        return Helper.getHashCode(addr).intValue();
-    }
-
     /**
      * 添加要支持的新asset,或者设置rate
      * 平台所有者才能调用
@@ -296,7 +292,7 @@ public class BitsFlea extends Ownable implements Contract, IPlatform, IUser, IMa
     @View
     public BigInteger newArbitId(Address plaintiff, Address defendant) {
         BigInteger aid = Helper.getHashCode(plaintiff);
-        aid = aid.shiftLeft(96).or(Helper.getHashCode(defendant));
+        aid = aid.shiftLeft(32).or(Helper.getHashCode(defendant));
         aid = aid.shiftLeft(64).or(BigInteger.valueOf(Block.timestamp()));
         return aid;
     }
@@ -375,7 +371,7 @@ public class BitsFlea extends Ownable implements Contract, IPlatform, IUser, IMa
         reviewer.lastActiveTime = Block.timestamp();
         reviewer.approveCount = 0;
         reviewer.againstCount = 0;
-        reviewer.voted = new HashMap<Integer, Boolean>();
+        reviewer.voted = new HashMap<Address, Boolean>();
         reviewers.put(uid, reviewer);
         emit(new CreateReviewerEvent(uid, reviewer.createTime));
     }
@@ -689,7 +685,7 @@ public class BitsFlea extends Ownable implements Contract, IPlatform, IUser, IMa
         require(reviewers.containsKey(reviewer) && users.containsKey(reviewer), Error.REVIEWER_NOT_EXIST);
 
         Reviewer rer = reviewers.get(reviewer);
-        require(!rer.voted.containsKey(Helper.getHashCode(uid).intValue()), Error.REVIEWER_YOU_ALREADY_VOTED);
+        require(!rer.voted.containsKey(uid), Error.REVIEWER_YOU_ALREADY_VOTED);
         if (isSupport) {
             require(rer.approveCount < 100, Error.REVIEWER_100_CAN_VOTE);
             rer.approveCount += 1;
@@ -697,7 +693,7 @@ public class BitsFlea extends Ownable implements Contract, IPlatform, IUser, IMa
             require(rer.againstCount < 100, Error.REVIEWER_100_CAN_VOTE);
             rer.againstCount += 1;
         }
-        rer.voted.put(Helper.getHashCode(uid).intValue(), true);
+        rer.voted.put(uid, true);
         User user = users.get(reviewer);
         if (rer.approveCount - rer.againstCount > 0) {
             user.isReviewer = true;

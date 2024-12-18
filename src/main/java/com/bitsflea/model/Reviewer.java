@@ -32,5 +32,5 @@ public class Reviewer {
      * 已经参与投票的用户
      * Map<地址hashCode,bool>
      */
-    public Map<Integer, Boolean> voted;
+    public Map<Address, Boolean> voted;
 }
