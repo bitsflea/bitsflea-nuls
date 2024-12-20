@@ -57,16 +57,12 @@ public class Helper {
      * 检查订单id的合法性
      * 
      * @param orderId 订单id
-     * @param pid     商品id
      * @param uid     下单者地址
      */
-    public static void checkOrderId(BigInteger orderId, BigInteger pid, Address uid) {
+    public static void checkOrderId(BigInteger orderId, Address uid) {
         int uHash = getHashCode(uid).intValue();
         int oHash = orderId.shiftRight(160).intValue();
         require(uHash == oHash, Error.INVALID_ORDER_ID);
-
-        BigInteger p1 = getPidByOrderId(orderId);
-        require(p1 == pid, Error.INVALID_ORDER_ID);
     }
 
     /**

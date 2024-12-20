@@ -2,6 +2,11 @@ package com.bitsflea.interfaces;
 
 import java.math.BigInteger;
 
+import com.bitsflea.model.Order;
+import com.bitsflea.model.Product;
+import com.bitsflea.model.ProductReturn;
+
+import io.nuls.contract.sdk.Address;
 import io.nuls.contract.sdk.annotation.Required;
 
 public interface IMarket {
@@ -53,10 +58,9 @@ public interface IMarket {
      * 买家下订单, 普通订单, 即一个商品只卖一次(不考虑库存)
      * 合约会验证订单id中的商品id与下单人hashCode
      * 
-     * @param pid     商品id
      * @param orderId 订单id
      */
-    void placeOrder(@Required BigInteger pid, @Required BigInteger orderId);
+    void placeOrder(@Required BigInteger orderId);
 
     /**
      * 取消订单
@@ -125,4 +129,40 @@ public interface IMarket {
      * @param orderId 订单id
      */
     void payOrder(BigInteger orderId);
+
+    /**
+     * 获取指定id的商品
+     * @param pid
+     * @return
+     */
+    Product getProduct(BigInteger pid);
+
+    /**
+     * 获取指定id的订单
+     * @param oid
+     * @return
+     */
+    Order getOrder(BigInteger oid);
+
+    /**
+     * 获取指定订单id的商品退货记录
+     * @param oid
+     * @return
+     */
+    ProductReturn getProductReturn(BigInteger oid);
+
+    /**
+     * 新生成一个商品id
+     * @param sender
+     * @return
+     */
+    BigInteger newProductId(Address sender);
+
+    /**
+     * 新生成一个订单id
+     * @param sender
+     * @param pid
+     * @return
+     */
+    BigInteger newOrderId(Address sender, BigInteger pid);
 }

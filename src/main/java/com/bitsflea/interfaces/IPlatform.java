@@ -1,8 +1,16 @@
 package com.bitsflea.interfaces;
 
 import java.math.BigInteger;
+import java.util.Map;
+
+import com.bitsflea.model.Arbitration;
+import com.bitsflea.model.Coin;
+import com.bitsflea.model.Global;
+import com.bitsflea.model.ProductAudit;
+import com.bitsflea.model.Reviewer;
 
 import io.nuls.contract.sdk.Address;
+import io.nuls.contract.sdk.MultyAssetValue;
 import io.nuls.contract.sdk.annotation.Required;
 
 public interface IPlatform {
@@ -65,4 +73,106 @@ public interface IPlatform {
      * @param agree true 表示支持原告，false表示支持被告
      */
     void voteArbit(BigInteger id, boolean agree);
+
+    /**
+     * 存入积分到工资池
+     * @param amount
+     */
+    void depositSalaryPool(BigInteger amount);
+
+    /**
+     * 存入积分到引荐奖励池
+     * @param amount
+     */
+    void depositRefPool(BigInteger amount);
+
+    /**
+     * 存入积分到系统奖励池
+     * @param amount
+     */
+    void depositSysPool(BigInteger amount);
+
+    /**
+     * 获取指定id的商品审核记录
+     * @param id
+     * @return
+     */
+    ProductAudit getProductAudit(BigInteger id);
+
+    /**
+     * 获取指定id的评审员
+     * @param uid
+     * @return
+     */
+    Reviewer getReviewer(Address uid);
+
+    /**
+     * 获取全局配置信息
+     * @return
+     */
+    Global getGlobal();
+
+    /**
+     * 获取支持的token信息
+     * @return
+     */
+    Map<String, Coin> getCoins();
+
+    /**
+     * 获取平台收入的token信息
+     * @return
+     */
+    Map<String, MultyAssetValue> getIncomeTokens();
+
+    /**
+     * 获取指定id的仲裁记录
+     * @param id
+     * @return
+     */
+    Arbitration getArbit(BigInteger id);
+
+    /**
+     * 获取所有仲裁记录
+     * @return
+     */
+    Map<BigInteger, Arbitration> getArbits();
+
+    /**
+     * 检查电话是否注册
+     * @param phoneHash
+     * @return
+     */
+    boolean checkPhone(String phoneHash);
+
+    /**
+     * 添加要支持的新asset,或者设置rate
+     * 平台所有者才能调用
+     * 
+     * @param assetChainId
+     * @param assetId
+     * @param rate         制成比例
+     */
+    void addCoin(Integer assetChainId, Integer assetId, short rate);
+
+    /**
+     * 生成一个新的仲裁id
+     * 
+     * @param plaintiff 原告人地址
+     * @param defendant 被告人地址
+     * @return
+     */
+    BigInteger newArbitId(Address plaintiff, Address defendant);
+
+    /**
+     * 获取平台积分地址
+     * @return
+     */
+    Address getPoint();
+
+    /**
+     * 设置最大评审员数量
+     * 只有合约所有者能操作
+     * @param count
+     */
+    void setReviewMaxCount(Integer count);
 }

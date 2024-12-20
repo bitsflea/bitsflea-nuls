@@ -2,7 +2,6 @@ package com.bitsflea;
 
 import static io.nuls.contract.sdk.Utils.emit;
 import static io.nuls.contract.sdk.Utils.require;
-import static io.nuls.contract.sdk.Utils.sha3;
 import static io.nuls.contract.sdk.Utils.assetDecimals;
 
 import java.math.BigInteger;
@@ -132,6 +131,7 @@ public class BitsFlea extends Ownable implements Contract, IPlatform, IUser, IMa
     public BitsFlea() {
         global = new Global();
         global.encryptKey = "02ebefd8efa16620f80eb79d6b588a93b38239c42722f12177ca40c9fa8ddf78c0";
+        global.commission = new Address("tNULSeBaMg3uA6d68rchxgu6a1jrGw1GQwkBBJ");
         phones = new HashMap<String, Boolean>();
         products = new HashMap<BigInteger, Product>();
         users = new HashMap<Address, User>();
@@ -159,6 +159,7 @@ public class BitsFlea extends Ownable implements Contract, IPlatform, IUser, IMa
      * @param assetId
      * @param rate
      */
+    @Override
     public void addCoin(Integer assetChainId, Integer assetId, short rate) {
         require(rate >= 0 && rate <= DENOMINATOR.intValue(), Error.PARAMETER_ERROR);
 
@@ -175,6 +176,7 @@ public class BitsFlea extends Ownable implements Contract, IPlatform, IUser, IMa
     }
 
     @View
+    @Override
     public boolean checkPhone(String phoneHash) {
         if (phones.containsKey(phoneHash)) {
             return phones.get(phoneHash);
@@ -184,66 +186,77 @@ public class BitsFlea extends Ownable implements Contract, IPlatform, IUser, IMa
 
     @View
     @JSONSerializable
+    @Override
     public Map<BigInteger, Arbitration> getArbits() {
         return arbits;
     }
 
     @View
     @JSONSerializable
+    @Override
     public Arbitration getArbit(BigInteger id) {
         return arbits.get(id);
     }
 
     @View
     @JSONSerializable
+    @Override
     public Map<String, MultyAssetValue> getIncomeTokens() {
         return incomeTokens;
     }
 
     @View
     @JSONSerializable
+    @Override
     public Map<String, Coin> getCoins() {
         return coins;
     }
 
     @View
     @JSONSerializable
+    @Override
     public Global getGlobal() {
         return global;
     }
 
     @View
     @JSONSerializable
+    @Override
     public ProductReturn getProductReturn(BigInteger oid) {
         return returnList.get(oid);
     }
 
     @View
     @JSONSerializable
+    @Override
     public Order getOrder(BigInteger oid) {
         return orders.get(oid);
     }
 
     @View
     @JSONSerializable
+    @Override
     public User getUser(Address uid) {
         return users.get(uid);
     }
 
     @View
     @JSONSerializable
+    @Override
     public Reviewer getReviewer(Address uid) {
         return reviewers.get(uid);
     }
 
     @View
     @JSONSerializable
-    public Product geProduct(BigInteger pid) {
+    @Override
+    public Product getProduct(BigInteger pid) {
         return products.get(pid);
     }
 
     @View
     @JSONSerializable
+    @Override
     public ProductAudit getProductAudit(BigInteger id) {
         return productAudits.get(id);
     }
@@ -277,6 +290,7 @@ public class BitsFlea extends Ownable implements Contract, IPlatform, IUser, IMa
      * @return 返回生成的商品id
      */
     @View
+    @Override
     public BigInteger newProductId(Address sender) {
         BigInteger hc = Helper.getHashCode(sender);
         return hc.shiftLeft(64).or(BigInteger.valueOf(Block.timestamp()));
@@ -290,6 +304,7 @@ public class BitsFlea extends Ownable implements Contract, IPlatform, IUser, IMa
      * @return
      */
     @View
+    @Override
     public BigInteger newArbitId(Address plaintiff, Address defendant) {
         BigInteger aid = Helper.getHashCode(plaintiff);
         aid = aid.shiftLeft(32).or(Helper.getHashCode(defendant));
@@ -305,6 +320,7 @@ public class BitsFlea extends Ownable implements Contract, IPlatform, IUser, IMa
      * @return 返回生成的订单id
      */
     @View
+    @Override
     public BigInteger newOrderId(Address sender, BigInteger pid) {
         BigInteger oid = Helper.getHashCode(sender);
         oid = oid.shiftLeft(96).or(pid);
@@ -365,6 +381,8 @@ public class BitsFlea extends Ownable implements Contract, IPlatform, IUser, IMa
         Address uid = Msg.sender();
         require(!isLock(uid), Error.USER_LOCKED);
         require(!reviewers.containsKey(uid), Error.ALREADY_REVIEWER);
+        require(reviewers.size() < global.reviewMaxCount, Error.REVIEWER_UPPER_LIMIT);
+
         Reviewer reviewer = new Reviewer();
         reviewer.uid = uid;
         reviewer.createTime = Block.timestamp();
@@ -425,8 +443,8 @@ public class BitsFlea extends Ownable implements Contract, IPlatform, IUser, IMa
         Helper.checkProductId(pid, uid);
         require(products.containsKey(pid), Error.PRODUCT_DOES_NOT_EXIST);
         Product product = products.get(pid);
-        require(product.status == Product.ProductStatus.NORMAL, Error.PRODUCT_INVALID_STATUS);
-        require(product.uid == uid, Error.PRODUCT_IS_NOT_YOURS);
+        require(product.status <= Product.ProductStatus.NORMAL, Error.PRODUCT_INVALID_STATUS);
+        require(product.uid.equals(uid), Error.PRODUCT_IS_NOT_YOURS);
 
         product.status = Product.ProductStatus.DELISTED;
 
@@ -434,12 +452,12 @@ public class BitsFlea extends Ownable implements Contract, IPlatform, IUser, IMa
     }
 
     @Override
-    public void placeOrder(BigInteger pid, BigInteger orderId) {
+    public void placeOrder(BigInteger orderId) {
         Address uid = Msg.sender();
         require(!isLock(uid), Error.USER_LOCKED);
-        Helper.checkProductId(pid, uid);
-        Helper.checkOrderId(orderId, pid, uid);
+        Helper.checkOrderId(orderId, uid);
 
+        BigInteger pid = Helper.getPidByOrderId(orderId);
         require(products.containsKey(pid), Error.PRODUCT_INVALID_ID);
         Product product = products.get(pid);
         require(product.status == Product.ProductStatus.NORMAL, Error.PRODUCT_INVALID_STATUS);
@@ -473,7 +491,7 @@ public class BitsFlea extends Ownable implements Contract, IPlatform, IUser, IMa
         require(products.containsKey(pid), Error.PRODUCT_INVALID_ID);
 
         Order order = orders.get(orderId);
-        require(order.buyer == uid, Error.ORDER_IS_NOT_YOURS);
+        require(order.buyer.equals(uid), Error.ORDER_IS_NOT_YOURS);
         require(order.status == Order.OrderStatus.OS_PENDING_PAYMENT, Error.INVALID_ORDER_STATUS);
 
         // 处理信用分
@@ -498,7 +516,7 @@ public class BitsFlea extends Ownable implements Contract, IPlatform, IUser, IMa
         require(number.length() <= 64, Error.INVALID_WAYBILL_NUMBER);
 
         Order order = orders.get(orderId);
-        require(order.seller == uid, Error.ORDER_IS_NOT_YOURS);
+        require(order.seller.equals(uid), Error.ORDER_IS_NOT_YOURS);
         require(order.status == Order.OrderStatus.OS_PENDING_SHIPMENT, Error.INVALID_ORDER_STATUS);
 
         order.shipmentNumber = number;
@@ -523,7 +541,7 @@ public class BitsFlea extends Ownable implements Contract, IPlatform, IUser, IMa
         require(number.length() <= 64, Error.INVALID_WAYBILL_NUMBER);
 
         Order order = orders.get(orderId);
-        require(order.buyer == uid, Error.ORDER_IS_NOT_YOURS);
+        require(order.buyer.equals(uid), Error.ORDER_IS_NOT_YOURS);
         require(order.status == Order.OrderStatus.OS_RETURN, Error.INVALID_ORDER_STATUS);
 
         ProductReturn pr = returnList.get(orderId);
@@ -550,7 +568,7 @@ public class BitsFlea extends Ownable implements Contract, IPlatform, IUser, IMa
         require(orders.containsKey(orderId), Error.INVALID_ORDER_ID);
 
         Order order = orders.get(orderId);
-        require(order.buyer == uid, Error.ORDER_IS_NOT_YOURS);
+        require(order.buyer.equals(uid), Error.ORDER_IS_NOT_YOURS);
         require(order.status == Order.OrderStatus.OS_PENDING_RECEIPT, Error.INVALID_ORDER_STATUS);
 
         completeOrder(order);
@@ -564,7 +582,7 @@ public class BitsFlea extends Ownable implements Contract, IPlatform, IUser, IMa
         require(orders.containsKey(orderId) && returnList.containsKey(orderId), Error.INVALID_ORDER_ID);
 
         Order order = orders.get(orderId);
-        require(order.seller == uid, Error.ORDER_IS_NOT_YOURS);
+        require(order.seller.equals(uid), Error.ORDER_IS_NOT_YOURS);
 
         order.status = Order.OrderStatus.OS_CANCELLED;
         order.clearTime = Block.timestamp() + global.clearOrderTime;
@@ -625,7 +643,7 @@ public class BitsFlea extends Ownable implements Contract, IPlatform, IUser, IMa
         require(orders.containsKey(orderId), Error.INVALID_ORDER_ID);
 
         Order order = orders.get(orderId);
-        require(order.buyer == uid, Error.ORDER_IS_NOT_YOURS);
+        require(order.buyer.equals(uid), Error.ORDER_IS_NOT_YOURS);
         require(order.status == Order.OrderStatus.OS_PENDING_RECEIPT, Error.INVALID_ORDER_STATUS);
         require(order.delayedCount < global.maxDeferrTimes, Error.NO_FURTHER_EXTENSION);
 
@@ -640,7 +658,7 @@ public class BitsFlea extends Ownable implements Contract, IPlatform, IUser, IMa
 
         require(orders.containsKey(orderId) && returnList.containsKey(orderId), Error.INVALID_ORDER_ID);
         Order order = orders.get(orderId);
-        require(order.seller == uid, Error.ORDER_IS_NOT_YOURS);
+        require(order.seller.equals(uid), Error.ORDER_IS_NOT_YOURS);
 
         ProductReturn pr = returnList.get(orderId);
         require(pr.status == ProductReturn.ReturnStatus.RS_PENDING_RECEIPT, Error.INVALID_RETURN_STATUS);
@@ -789,10 +807,10 @@ public class BitsFlea extends Ownable implements Contract, IPlatform, IUser, IMa
                 return;
             }
             Order order = orders.get(orderId);
-            if (plaintiff == order.buyer) { // 买家发起仲裁
+            if (plaintiff.equals(order.buyer)) { // 买家发起仲裁
                 require(order.status == Order.OrderStatus.OS_PENDING_RECEIPT, Error.INVALID_ORDER_STATUS);
                 order.status = Order.OrderStatus.OS_ARBITRATION;
-            } else if (plaintiff == order.seller) { // 卖家发起仲裁
+            } else if (plaintiff.equals(order.seller)) { // 卖家发起仲裁
                 require(order.status == Order.OrderStatus.OS_RETURN, Error.INVALID_ORDER_STATUS);
                 require(returnList.containsKey(orderId), Error.INVALID_ORDER_ID);
                 ProductReturn pr = returnList.get(orderId);
@@ -931,17 +949,17 @@ public class BitsFlea extends Ownable implements Contract, IPlatform, IUser, IMa
                 }
             } else if (arb.type == Arbitration.ArbitType.AT_COMPLAINT) {
                 // 扣被告信用分
-                subCredit(arb.winner == arb.plaintiff ? arb.defendant : arb.plaintiff, global.arbitLosing);
+                subCredit(arb.winner.equals(arb.plaintiff) ? arb.defendant : arb.plaintiff, global.arbitLosing);
             } else if (arb.type == Arbitration.ArbitType.AT_PRODUCT) {
                 // 扣除输家信用分
-                subCredit(arb.winner == arb.plaintiff ? arb.defendant : arb.plaintiff, global.arbitLosing);
-                if (arb.winner == arb.plaintiff) {
+                subCredit(arb.winner.equals(arb.plaintiff) ? arb.defendant : arb.plaintiff, global.arbitLosing);
+                if (arb.winner.equals(arb.plaintiff)) {
                     Product product = products.get(arb.pid);
                     product.status = Product.ProductStatus.DELISTED;
                     emit(new DelistProductEvent(arb.pid, uid));
                 }
             } else if (arb.type == Arbitration.ArbitType.AT_ILLEGAL_INFO) {
-                subCredit(arb.winner == arb.plaintiff ? arb.defendant : arb.plaintiff, global.arbitLosing);
+                subCredit(arb.winner.equals(arb.plaintiff) ? arb.defendant : arb.plaintiff, global.arbitLosing);
             }
         }
 
@@ -985,7 +1003,8 @@ public class BitsFlea extends Ownable implements Contract, IPlatform, IUser, IMa
         require(order.status == Order.OrderStatus.OS_PENDING_PAYMENT, Error.INVALID_ORDER_STATUS);
         require(order.amount.getAssetChainId() == value.getAssetChainId() &&
                 order.amount.getAssetId() == value.getAssetId(), Error.INVALID_ASSET);
-        require(order.amount.getValue().compareTo(value.getValue()) == 0, Error.INVALID_AMOUNT);
+        require(order.amount.getValue().add(order.postage.getValue()).compareTo(value.getValue()) == 0,
+                Error.INVALID_AMOUNT);
 
         order.status = Order.OrderStatus.OS_PENDING_SHIPMENT;
         order.payTime = Block.timestamp();
@@ -1016,10 +1035,10 @@ public class BitsFlea extends Ownable implements Contract, IPlatform, IUser, IMa
 
         User seller = users.get(order.seller);
         User buyer = users.get(order.buyer);
-        if (seller != null && seller.uid == order.seller) {
+        if (seller != null && seller.uid.equals(order.seller)) {
             seller.sellTotal += 1;
         }
-        if (buyer != null && buyer.uid == order.buyer) {
+        if (buyer != null && buyer.uid.equals(order.buyer)) {
             buyer.buyTotal += 1;
         }
 
@@ -1230,6 +1249,50 @@ public class BitsFlea extends Ownable implements Contract, IPlatform, IUser, IMa
         categories.put(id, c);
 
         emit(new AddCategoryEvent(Msg.sender(), id, view, parent));
+    }
+
+    @Override
+    public void depositSalaryPool(BigInteger amount) {
+        if (amount.compareTo(BigInteger.ZERO) > 0) {
+            boolean result = point.transferFrom(Msg.sender(), Msg.address(), amount);
+            if (result) {
+                global.salaryPool = global.salaryPool.add(amount);
+            }
+        }
+    }
+
+    @Override
+    public void depositRefPool(BigInteger amount) {
+        if (amount.compareTo(BigInteger.ZERO) > 0) {
+            boolean result = point.transferFrom(Msg.sender(), Msg.address(), amount);
+            if (result) {
+                global.refPool = global.refPool.add(amount);
+            }
+        }
+    }
+
+    @Override
+    public void depositSysPool(BigInteger amount) {
+        if (amount.compareTo(BigInteger.ZERO) > 0) {
+            boolean result = point.transferFrom(Msg.sender(), Msg.address(), amount);
+            if (result) {
+                global.sysPool = global.sysPool.add(amount);
+            }
+        }
+    }
+
+    @View
+    @Override
+    public Address getPoint() {
+        return point.getNrc20Token();
+    }
+
+    @Override
+    public void setReviewMaxCount(Integer count) {
+        onlyOwner();
+        if (global.reviewMaxCount != count) {
+            global.reviewMaxCount = count;
+        }
     }
 
 }

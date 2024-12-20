@@ -183,4 +183,9 @@ public class Error {
      * 你已经投票过了
      */
     public static final String ARBIT_ALREADY_VOTED = "30014";
+
+    /**
+     * 评审员数量已经达到上限
+     */
+    public static final String REVIEWER_UPPER_LIMIT = "30015";
 }

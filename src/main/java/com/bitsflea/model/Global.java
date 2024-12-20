@@ -27,15 +27,15 @@ public class Global {
     /**
      * 工资池
      */
-    public BigInteger salaryPool;
+    public BigInteger salaryPool = BigInteger.ZERO;
     /**
      * 引荐奖励池
      */
-    public BigInteger refPool;
+    public BigInteger refPool = BigInteger.ZERO;
     /**
      * 系统奖励池
      */
-    public BigInteger sysPool;
+    public BigInteger sysPool = BigInteger.ZERO;
     /**
      * 每引荐一个用户的奖励,100积分
      */

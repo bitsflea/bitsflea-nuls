@@ -12,6 +12,11 @@
     "mocha": "^11.0.1"
   },
   "scripts": {
-    "test": "mocha index.js"
+    "test": "mocha index.js",
+    "deposit": "mocha deposit.js",
+    "user": "mocha user.js",
+    "reviewer": "mocha reviewer.js",
+    "market": "mocha market.js",
+    "platform": "mocha platform.js"
   }
 }

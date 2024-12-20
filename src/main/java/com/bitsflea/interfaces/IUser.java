@@ -1,5 +1,7 @@
 package com.bitsflea.interfaces;
 
+import com.bitsflea.model.User;
+
 import io.nuls.contract.sdk.Address;
 import io.nuls.contract.sdk.annotation.Required;
 
@@ -31,4 +33,11 @@ public interface IUser {
      * 申请成为评审员
      */
     void appReviewer();
+
+    /**
+     * 获取指定id的用户
+     * @param uid
+     * @return
+     */
+    User getUser(Address uid);
 }
