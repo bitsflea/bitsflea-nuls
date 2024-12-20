@@ -144,7 +144,7 @@ public class BitsFlea extends Ownable implements Contract, IPlatform, IUser, IMa
         coins = new HashMap<String, Coin>();
         coins.put("0-0", new Coin(0, 0, (short) 50));
 
-        point = new NRC20Wrapper(new Address("tNULSeBaN882J8VivXbkGiHdEzq4FGip1t1DWt"));
+        point = new NRC20Wrapper(new Address("tNULSeBaMyDsFwg1V66pUfvXNhzupNZ9At6i6o"));
         pointDecimals = point.decimals();
 
         incomeTokens = new HashMap<String, MultyAssetValue>();
@@ -1238,6 +1238,7 @@ public class BitsFlea extends Ownable implements Contract, IPlatform, IUser, IMa
 
     @Override
     public void addCategory(int id, String view, int parent) {
+        onlyOwner();
         require(!categories.containsKey(id), Error.PRODUCT_CATEGORY_ALREADY_EXISTS);
         require(parent == 0 || categories.containsKey(parent), Error.PARAMETER_ERROR);
         require(view != null && !view.isEmpty(), Error.PARAMETER_ERROR);

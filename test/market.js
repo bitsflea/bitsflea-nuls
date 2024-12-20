@@ -172,7 +172,7 @@ describe("Market", function () {
         // Pay order
         let pointAddress = await bitsflea.getPoint();
         let point = await sdk.contract(pointAddress);
-        await sdk.waitingResult(await point.transfer(bob.sender, parseNULS(110).toString(10)));
+        await sdk.waitingResult(await point.transfer(bob.sender, parseNULS(220).toString(10)));
 
         // 20020
         await point.connect(bob.accountPri).transferAndCall(bitsflea.address, parseNULS(10).toString(10), orderId).catch(reason => {
