@@ -461,7 +461,7 @@ public class BitsFlea extends Ownable implements Contract, IPlatform, IUser, IMa
         require(products.containsKey(pid), Error.PRODUCT_INVALID_ID);
         Product product = products.get(pid);
         require(product.status == Product.ProductStatus.NORMAL, Error.PRODUCT_INVALID_STATUS);
-        require(product.uid != uid, Error.PRODUCT_CANT_BUY_YOUR_OWN);
+        require(!product.uid.equals(uid), Error.PRODUCT_CANT_BUY_YOUR_OWN);
 
         Order order = new Order();
         order.oid = orderId;
@@ -735,7 +735,7 @@ public class BitsFlea extends Ownable implements Contract, IPlatform, IUser, IMa
 
         Product product = products.get(pid);
         require(product.status == Product.ProductStatus.PUBLISH, Error.PRODUCT_INVALID_STATUS);
-        require(product.uid != uid, Error.REVIEWER_FOR_YOURSELF);
+        require(!product.uid.equals(uid), Error.REVIEWER_FOR_YOURSELF);
 
         if (isDelist) {
             require(reasons != null && !reasons.isEmpty(), Error.REVIEWER_NO_REASON);
@@ -857,7 +857,7 @@ public class BitsFlea extends Ownable implements Contract, IPlatform, IUser, IMa
         require(arbits.containsKey(id), Error.PARAMETER_ERROR);
 
         Arbitration arb = arbits.get(id);
-        require(arb.defendant != uid && arb.plaintiff != uid, Error.ARBIT_CANNOT_PARTICIPATE);
+        require(!arb.defendant.equals(uid) && !arb.plaintiff.equals(uid), Error.ARBIT_CANNOT_PARTICIPATE);
         require(arb.status < Arbitration.ArbitStatus.AS_COMPLETED, Error.ARBIT_INVALID_STATUS);
 
         if (arb.reviewers == null) {
@@ -926,7 +926,7 @@ public class BitsFlea extends Ownable implements Contract, IPlatform, IUser, IMa
             // 处理对应的数据
             if (arb.type == Arbitration.ArbitType.AT_ORDER) {
                 Order order = orders.get(arb.orderId);
-                if (arb.winner == order.buyer) { // 买家赢
+                if (arb.winner.equals(order.buyer)) { // 买家赢
                     // 进入退货流程
                     order.status = Order.OrderStatus.OS_RETURN;
                     ProductReturn pr = new ProductReturn();

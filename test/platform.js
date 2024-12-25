@@ -2,7 +2,7 @@ import { env, sdk, contract } from "./config.js"
 
 import * as assert from 'assert';
 import * as tools from "./tools.js";
-import { parseNULS } from "nuls-api-v2";
+import { parseNULS, getEvent } from "nuls-api-v2";
 
 describe("Platform", function () {
     this.timeout(200000);
@@ -63,7 +63,40 @@ describe("Platform", function () {
             let u1 = await bitsflea.getUser(sdk.sender);
             await sdk.waitingResult(await bitsflea.connect(alice.accountPri).review(pid, true, "商品违规"));
             let u2 = await bitsflea.getUser(sdk.sender);
-            assert.ok(u1.creditValue - u2.creditValue == 5, "creditPublish error");
+            assert.ok(u1.creditValue - u2.creditValue == 5, "creditInvalidPublish error");
+        });
+    });
+
+    describe("Clean Order", () => {
+        it("clean order", async () => {
+            let balance1 = await point.balanceOf(alice.sender)
+            let result = await sdk.waitingResult(await bitsflea.connect(alice.accountPri).cleanOrder());
+            let balance2 = await point.balanceOf(alice.sender)
+            assert.ok(balance2.gte(balance1), "clean order error");
+        });
+    });
+
+    describe("Arbitration", () => {
+
+        it("Product arbit", async () => {
+            // publish product
+            let pid = await bitsflea.newProductId(sdk.sender);
+            pid = pid.toString(10);
+
+            let postage = parseNULS(10).toString();
+            let price = parseNULS(100).toString();
+
+            let txHash = await bitsflea.connect(sdk.accountPri).publish(pid, 1, "description", true, false, true, "position", 0, 1, 1,
+                `${postage},0,0`, `${price},0,0`);
+            await sdk.waitingResult(txHash);
+
+            // applyArbit
+            let result = await sdk.waitingResult(await bitsflea.connect(alice.accountPri).applyArbit(carol.sender, pid, null, 200, "商品违规"));
+            let event = getEvent(result, "ApplyArbitEvent");
+            console.debug("event:", event);
+            let aid = event.payload.aid;
+            let arbit = await bitsflea.getArbit(aid);
+            console.debug("arbit:", arbit);
         });
     });
 
