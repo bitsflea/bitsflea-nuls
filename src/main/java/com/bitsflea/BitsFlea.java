@@ -9,6 +9,7 @@ import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.Iterator;
 import java.util.LinkedHashMap;
+import java.util.List;
 import java.util.Map;
 import java.util.Map.Entry;
 
@@ -128,7 +129,7 @@ public class BitsFlea extends Ownable implements Contract, IPlatform, IUser, IMa
      */
     private static final int CHAIN_ID = 2;
 
-    public BitsFlea() {
+    public BitsFlea(Address pointAddr) {
         global = new Global();
         global.encryptKey = "02ebefd8efa16620f80eb79d6b588a93b38239c42722f12177ca40c9fa8ddf78c0";
         global.commission = new Address("tNULSeBaMg3uA6d68rchxgu6a1jrGw1GQwkBBJ");
@@ -144,11 +145,12 @@ public class BitsFlea extends Ownable implements Contract, IPlatform, IUser, IMa
         coins = new HashMap<String, Coin>();
         coins.put("0-0", new Coin(0, 0, (short) 50));
 
-        point = new NRC20Wrapper(new Address("tNULSeBaMyDsFwg1V66pUfvXNhzupNZ9At6i6o"));
-        pointDecimals = point.decimals();
-
         incomeTokens = new HashMap<String, MultyAssetValue>();
         categories = new HashMap<Integer, Categories>();
+
+        require(pointAddr != null);
+        point = new NRC20Wrapper(pointAddr);
+        pointDecimals = point.decimals();
     }
 
     /**
@@ -863,6 +865,7 @@ public class BitsFlea extends Ownable implements Contract, IPlatform, IUser, IMa
         if (arb.reviewers == null) {
             arb.reviewers = new ArrayList<Address>();
         } else {
+            require(arb.reviewers.size() < global.arbitMaxCount, Error.REVIEWER_UPPER_LIMIT);
             require(!arb.reviewers.contains(uid), Error.ARBIT_ALREADY_IN);
         }
         arb.reviewers.add(uid);
@@ -883,6 +886,7 @@ public class BitsFlea extends Ownable implements Contract, IPlatform, IUser, IMa
         require(arbits.containsKey(id), Error.PARAMETER_ERROR);
 
         Arbitration arb = arbits.get(id);
+        require(arb.reviewers.contains(uid), Error.ARBIT_ONLY_REVIEWER);
         require(arb.status < Arbitration.ArbitStatus.AS_COMPLETED, Error.ARBIT_INVALID_STATUS);
         if (proofContent != null && !proofContent.isEmpty()) {
             arb.proofContent = proofContent;
@@ -898,6 +902,7 @@ public class BitsFlea extends Ownable implements Contract, IPlatform, IUser, IMa
 
         Arbitration arb = arbits.get(id);
         require(arb.status == Arbitration.ArbitStatus.AS_PROCESSING, Error.ARBIT_INVALID_STATUS);
+        require(arb.proofContent != null && !arb.proofContent.isEmpty(), Error.ARBIT_NO_PROOF_PROVIDED);
 
         if (arb.alreadyVoted == null) {
             arb.alreadyVoted = new ArrayList<Address>();
@@ -960,6 +965,20 @@ public class BitsFlea extends Ownable implements Contract, IPlatform, IUser, IMa
                 }
             } else if (arb.type == Arbitration.ArbitType.AT_ILLEGAL_INFO) {
                 subCredit(arb.winner.equals(arb.plaintiff) ? arb.defendant : arb.plaintiff, global.arbitLosing);
+            }
+            // 评审员工资
+            int size = arb.alreadyVoted.size();
+            BigInteger total = global.reviewSalaryDispute.multiply(BigInteger.valueOf(size));
+            if (global.salaryPool.compareTo(total) >= 0) {
+                global.salaryPool = global.salaryPool.subtract(total);
+                List<BigInteger> vals = new ArrayList<BigInteger>();
+                for (int m = 0; m < arb.alreadyVoted.size(); m++) {
+                    vals.add(global.reviewSalaryDispute);
+                }
+                boolean result = Helper.batchTransfer(point.getNrc20Token(),
+                        arb.alreadyVoted.toArray(new Address[size]),
+                        vals.toArray(new BigInteger[size]));
+                require(result, Error.BATCHTRANSFER_FAILED);
             }
         }
 

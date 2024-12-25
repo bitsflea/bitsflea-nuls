@@ -14,6 +14,7 @@ public class Helper {
 
     /**
      * 返回地址hash的前4个字节(32位)
+     * 
      * @param addr
      * @return
      */
@@ -73,5 +74,25 @@ public class Helper {
      */
     public static BigInteger getPidByOrderId(BigInteger orderId) {
         return orderId.shiftRight(64).and(BigInteger.valueOf(2).pow(96).subtract(BigInteger.ONE));
+    }
+
+    public static boolean batchTransfer(Address token, Address[] targets, BigInteger[] values) {
+        require(token.isContract(), "not contract address");
+
+        String[][] args = new String[2][];
+        String[] ts = new String[targets.length];
+        String[] vals = new String[values.length];
+        for (int i = 0; i < values.length; i++) {
+            vals[i] = values[i].toString();
+            ts[i] = targets[i].toString();
+        }
+        args[0] = ts;
+        args[1] = vals;
+
+        String result = token.callWithReturnValue("batchTransfer", "", args, BigInteger.ZERO);
+        if (result != null && result.length() > 0) {
+            return Boolean.parseBoolean(result);
+        }
+        return false;
     }
 }

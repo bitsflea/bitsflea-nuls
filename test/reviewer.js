@@ -10,12 +10,14 @@ describe('Bitsflea', function () {
     let alice;
     let bob;
     let carol;
+    let lilei;
 
     before(async function () {
         bitsflea = await sdk.contract(contract);
         alice = sdk.account(env.KEY_ALICE);
         bob = sdk.account(env.KEY_BOB);
         carol = sdk.account(env.KEY_CAROL);
+        lilei = sdk.account(env.KEY_LILEI);
     });
 
     describe("Reviewer", function () {
@@ -28,9 +30,9 @@ describe('Bitsflea', function () {
             let _bob = await bitsflea.getUser(bob.sender);
             if (!_bob) {
                 const phone = "18580599998";
-                let nickname = "alice";
+                let nickname = "bob";
                 let phoneHash = tools.getHash(phone);
-                let phoneEncrypt = tools.encrypt(env.KEY_ALICE, encryptKey, phone);
+                let phoneEncrypt = tools.encrypt(env.KEY_BOB, encryptKey, phone);
                 let referrer = "";
                 let head = "";
 
@@ -40,9 +42,9 @@ describe('Bitsflea', function () {
             let _alice = await bitsflea.getUser(alice.sender);
             if (!_alice) {
                 const phone = "18580599997";
-                let nickname = "bob";
+                let nickname = "alice";
                 let phoneHash = tools.getHash(phone);
-                let phoneEncrypt = tools.encrypt(env.KEY_BOB, encryptKey, phone);
+                let phoneEncrypt = tools.encrypt(env.KEY_ALICE, encryptKey, phone);
                 let referrer = "";
                 let head = "";
 
@@ -59,6 +61,18 @@ describe('Bitsflea', function () {
                 let head = "";
 
                 result = await bitsflea.connect(carol.accountPri).regUser(nickname, phoneHash, phoneEncrypt, referrer, head);
+                await sdk.waitingResult(result);
+            }
+            let _lilei = await bitsflea.getUser(lilei.sender);
+            if (!_lilei) {
+                const phone = "18580599995";
+                let nickname = "lilei";
+                let phoneHash = tools.getHash(phone);
+                let phoneEncrypt = tools.encrypt(env.KEY_LILEI, encryptKey, phone);
+                let referrer = "";
+                let head = "";
+
+                result = await bitsflea.connect(lilei.accountPri).regUser(nickname, phoneHash, phoneEncrypt, referrer, head);
                 await sdk.waitingResult(result);
             }
 

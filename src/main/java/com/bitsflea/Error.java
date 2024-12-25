@@ -25,6 +25,10 @@ public class Error {
      * 用户已经被锁定
      */
     public static final String USER_LOCKED = "10004";
+    /**
+     * 批量转账失败
+     */
+    public static final String BATCHTRANSFER_FAILED = "10005";
 
     /**
      * 商品已经存在
@@ -188,4 +192,12 @@ public class Error {
      * 评审员数量已经达到上限
      */
     public static final String REVIEWER_UPPER_LIMIT = "30015";
+    /**
+     * 只允许参与的评审员操作
+     */
+    public static final String ARBIT_ONLY_REVIEWER = "30016";
+    /**
+     * 未提供证明材料
+     */
+    public static final String ARBIT_NO_PROOF_PROVIDED = "30017";
 }

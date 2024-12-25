@@ -2834,7 +2834,7 @@ normalize-path@^3.0.0, normalize-path@~3.0.0:
 
 "nuls-api-v2@https://github.com/xiangxn/nuls-api-v2.git":
   version "1.0.0"
-  resolved "https://github.com/xiangxn/nuls-api-v2.git#3486be97027b0a46b631042953e04a7015d40995"
+  resolved "https://github.com/xiangxn/nuls-api-v2.git#b6b7fc6bc2d5814ac3b26347966275cf3eede76e"
   dependencies:
     axios "^1.7.7"
     bignumber.js "^9.1.2"

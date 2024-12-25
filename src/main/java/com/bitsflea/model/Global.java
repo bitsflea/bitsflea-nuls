@@ -105,6 +105,10 @@ public class Global {
      */
     public int reviewMinCount = 3;
     /**
+     * 在单个仲裁中最多5名
+     */
+    public int arbitMaxCount = 5;
+    /**
      * 最多3000名评审员
      */
     public int reviewMaxCount = 3000;

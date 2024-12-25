@@ -12,7 +12,8 @@
     "mocha": "^11.0.1"
   },
   "scripts": {
-    "test": "mocha index.js",
+    "test": "yarn index && yarn deposit && yarn user && yarn reviewer && yarn market && yarn platform",
+    "index":"mocha index.js",
     "deposit": "mocha deposit.js",
     "user": "mocha user.js",
     "reviewer": "mocha reviewer.js",
