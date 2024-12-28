@@ -61,7 +61,7 @@ describe('Referrer', function () {
             `${postage},0,0`, `${price},0,0`);
         await sdk.waitingResult(txHash);
 
-        // alice review product
+        // bob review product
         await sdk.waitingResult(await bitsflea.connect(bob.accountPri).review(pid, false, "合格"));
 
         // HanMeimei buy product
