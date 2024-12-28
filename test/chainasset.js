@@ -101,9 +101,11 @@ describe('ChainAsset', function () {
             bitsflea.getIncomeTokens()
         ]);
         // console.log("incomeTokens2:", incomeTokens2);
+        // Credit score
         assert.equal(u1.creditValue + 5, u12.creditValue, "owner creditValue error");
         assert.equal(u2.creditValue + 5, u22.creditValue, "HanMeimei creditValue error");
 
+        // trading point reward
         let pointReward = parseNULS(1).times(transactionAwardRate).div(1000);
         assert.equal(b32.minus(b3).toString(10), pointReward.toString(), "owner point balance error");
         assert.equal(b42.minus(b4).toString(10), pointReward.toString(), "HanMeimei point balance error");
@@ -111,6 +113,7 @@ describe('ChainAsset', function () {
         let total = parseNULS(1.1);
         let income = total.times(50).div(1000);
         let reward = income.times(50).div(1000);
+        // referrer Trading Commission
         assert.equal(b12.minus(b1).toString(10), reward.toString(10), "ref reward error");
 
         let platformIncome = BigInt(0);
@@ -120,6 +123,7 @@ describe('ChainAsset', function () {
             platformIncome = BigInt(incomeTokens2['5-1'].value);
         }
 
+        // Platform revenue
         assert.equal(platformIncome.toString(), income.minus(reward).toString(10), "platformIncome error");
         assert.equal(b22.minus(b2).toString(10), platformIncome.toString(), "platform 5-1 balance error");
     });
