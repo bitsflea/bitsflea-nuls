@@ -1250,8 +1250,12 @@ public class BitsFlea extends Ownable implements Contract, IPlatform, IUser, IMa
         if (val.compareTo(BigInteger.valueOf(1)) > 0
                 && global.sysPool.compareTo(val.multiply(BigInteger.valueOf(2))) >= 0) {
             global.sysPool = global.sysPool.subtract(val.multiply(BigInteger.valueOf(2)));
-            point.transfer(seller.uid, val);
-            point.transfer(buyer.uid, val);
+            // point.transfer(seller.uid, val);
+            // point.transfer(buyer.uid, val);
+            boolean result = Helper.batchTransfer(point.getNrc20Token(),
+                    new Address[] { seller.uid, buyer.uid },
+                    new BigInteger[] { val, val });
+            require(result, Error.BATCHTRANSFER_FAILED);
         }
     }
 

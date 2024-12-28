@@ -178,4 +178,126 @@ describe("Platform", function () {
         });
     });
 
+    describe("Arbitration Order", async () => {
+        let pid;
+        let orderId;
+
+        let postage = parseNULS(10).toString();
+        let price = parseNULS(100).toString();
+
+        before(async () => {
+            // lilei publish product
+            pid = await bitsflea.newProductId(lilei.sender);
+            pid = pid.toString(10);
+
+            let txHash = await bitsflea.connect(lilei.accountPri).publish(pid, 1, "description", true, false, true, "position", 0, 1, 1,
+                `${postage},0,0`, `${price},0,0`);
+            await sdk.waitingResult(txHash);
+
+            // alice review product
+            await sdk.waitingResult(await bitsflea.connect(alice.accountPri).review(pid, false, "合格"));
+        });
+
+        it("buyer winner arbit", async () => {
+            // owner buy product
+            orderId = await bitsflea.newOrderId(sdk.sender, pid);
+            orderId = orderId.toString(10);
+            await sdk.waitingResult(await bitsflea.connect(sdk.accountPri).placeOrder(orderId));
+            // owner pay order
+            let pointAddress = await bitsflea.getPoint();
+            let point = await sdk.contract(pointAddress);
+            await sdk.waitingResult(await point.connect(sdk.accountPri).transferAndCall(bitsflea.address, parseNULS(110).toString(10), orderId));
+            // lilei shipment
+            await sdk.waitingResult(await bitsflea.connect(lilei.accountPri).shipments(orderId, "123456789"));
+            // owner apply arbit
+            let result = await sdk.waitingResult(await bitsflea.connect(sdk.accountPri).applyArbit(lilei.sender, null, orderId, 0, "卖家不想退货"));
+            let event = getEvent(result, "ApplyArbitEvent");
+            let aid = event.payload.aid;
+            // in arbitration bob,alice,carol
+            await bitsflea.connect(bob.accountPri).inArbit(aid);
+            await bitsflea.connect(alice.accountPri).inArbit(aid);
+            await sdk.waitingResult(await bitsflea.connect(carol.accountPri).inArbit(aid));
+            // carol update arbit
+            await sdk.waitingResult(await bitsflea.connect(carol.accountPri).updateArbit(aid, "仲裁说明及证明材料"));
+            // bob, alice, carol start voting for arbit
+            await bitsflea.connect(bob.accountPri).voteArbit(aid, true);
+            await bitsflea.connect(alice.accountPri).voteArbit(aid, true);
+            await sdk.waitingResult(await bitsflea.connect(carol.accountPri).voteArbit(aid, true, { gasLimitTimes: 3 }));
+            // check
+            let [order, returns] = await Promise.all([
+                bitsflea.getOrder(orderId),
+                bitsflea.getProductReturn(orderId)
+            ]);
+            assert.equal(order.status, 800, "order status error");
+            assert.equal(returns.status, 0, "returns status error");
+            // owner shipments
+            await sdk.waitingResult(await bitsflea.connect(sdk.accountPri).reShipments(orderId, "12345678966"));
+            // get balance
+            let [buyerB, sellerB] = await Promise.all([
+                point.balanceOf(sdk.sender),
+                point.balanceOf(lilei.sender)
+            ]);
+            // lilei confirm receipt
+            await sdk.waitingResult(await bitsflea.connect(lilei.accountPri).reConfirmReceipt(orderId));
+            // check
+            let [o, r, p, buyerB2, sellerB2] = await Promise.all([
+                bitsflea.getOrder(orderId),
+                bitsflea.getProductReturn(orderId),
+                bitsflea.getProduct(pid),
+                point.balanceOf(sdk.sender),
+                point.balanceOf(lilei.sender)
+            ]);
+            assert.equal(o.status, 200, "order status error");
+            assert.equal(r.status, 200, "returns status error");
+            assert.equal(p.status, 100, "product status error");
+            assert.equal(buyerB2.minus(buyerB).toString(10), price, "buyer balance error");
+            assert.equal(sellerB2.minus(sellerB).toString(10), postage, "seller balance error");
+        });
+
+        it("seller winner arbit", async () => {
+            // owner buy product
+            orderId = await bitsflea.newOrderId(sdk.sender, pid);
+            orderId = orderId.toString(10);
+            await sdk.waitingResult(await bitsflea.connect(sdk.accountPri).placeOrder(orderId));
+            // owner pay order
+            let pointAddress = await bitsflea.getPoint();
+            let point = await sdk.contract(pointAddress);
+            await sdk.waitingResult(await point.connect(sdk.accountPri).transferAndCall(bitsflea.address, parseNULS(110).toString(10), orderId));
+            // lilei shipment
+            await sdk.waitingResult(await bitsflea.connect(lilei.accountPri).shipments(orderId, "123456789"));
+            // owner apply arbit
+            let result = await sdk.waitingResult(await bitsflea.connect(sdk.accountPri).applyArbit(lilei.sender, null, orderId, 0, "卖家不想退货"));
+            let event = getEvent(result, "ApplyArbitEvent");
+            let aid = event.payload.aid;
+            // in arbitration bob,alice,carol
+            await bitsflea.connect(bob.accountPri).inArbit(aid);
+            await bitsflea.connect(alice.accountPri).inArbit(aid);
+            await sdk.waitingResult(await bitsflea.connect(carol.accountPri).inArbit(aid));
+            // carol update arbit
+            await sdk.waitingResult(await bitsflea.connect(carol.accountPri).updateArbit(aid, "仲裁说明及证明材料"));
+            // bob, alice, carol start voting for arbit
+            await bitsflea.connect(bob.accountPri).voteArbit(aid, false);
+            await bitsflea.connect(alice.accountPri).voteArbit(aid, false);
+            // get balance
+            let [sellerB] = await Promise.all([
+                point.balanceOf(lilei.sender)
+            ]);
+            await sdk.waitingResult(await bitsflea.connect(carol.accountPri).voteArbit(aid, false, { gasLimitTimes: 5 }));
+            // check
+            let [order, sellerB2, p] = await Promise.all([
+                bitsflea.getOrder(orderId),
+                point.balanceOf(lilei.sender),
+                bitsflea.getProduct(pid)
+
+            ]);
+            let total = parseNULS(110);
+            let income = total.minus(total.times(50).div(1000));
+            let reward = parseNULS(100).times(50).div(1000);
+            income = income.plus(reward);
+            assert.equal(order.status, 600, "order status error");
+            assert.ok(sellerB2.minus(sellerB).eq(income), "seller balance error");
+            assert.equal(p.status, 200, "product status error");
+        });
+    });
+
 });
