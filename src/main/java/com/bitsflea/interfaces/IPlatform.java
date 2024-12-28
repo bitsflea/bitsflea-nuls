@@ -175,4 +175,11 @@ public interface IPlatform {
      * @param count
      */
     void setReviewMaxCount(Integer count);
+
+    /**
+     * 设置平台佣金比例与引荐佣金比例
+     * @param feeRate 平台佣金比例
+     * @param refCommRate 引荐佣金比例
+     */
+    void setRate(Short feeRate,Short refCommRate);
 }

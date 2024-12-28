@@ -1085,7 +1085,7 @@ public class BitsFlea extends Ownable implements Contract, IPlatform, IUser, IMa
         BigInteger total = order.amount.getValue().add(order.postage.getValue());
         BigInteger income = total.multiply(BigInteger.valueOf(global.feeRate)).divide(DENOMINATOR);
         BigInteger amount = total.subtract(income);
-        if (buyer.referrer != null && !isLock(buyer.referrer)) {
+        if (income.compareTo(BigInteger.ZERO) > 0 && buyer.referrer != null && !isLock(buyer.referrer)) {
             BigInteger refcomm = income.multiply(BigInteger.valueOf(global.refCommRate)).divide(DENOMINATOR);
             income = income.subtract(refcomm);
             // 转给引荐人
@@ -1117,6 +1117,8 @@ public class BitsFlea extends Ownable implements Contract, IPlatform, IUser, IMa
      * @param assetId      资产id
      */
     private void transfer(Address to, BigInteger amount, int assetChainId, int assetId) {
+        if (amount == null || amount.compareTo(BigInteger.ZERO) <= 0)
+            return;
         if (assetChainId == 0) {
             boolean result = point.transfer(to, amount);
             require(result, Error.FAILED_TRANSFER_POINTS);
@@ -1316,6 +1318,17 @@ public class BitsFlea extends Ownable implements Contract, IPlatform, IUser, IMa
         onlyOwner();
         if (global.reviewMaxCount != count) {
             global.reviewMaxCount = count;
+        }
+    }
+
+    @Override
+    public void setRate(Short feeRate, Short refCommRate) {
+        onlyOwner();
+        if (feeRate != null) {
+            global.feeRate = feeRate;
+        }
+        if (refCommRate != null) {
+            global.refCommRate = refCommRate;
         }
     }
 

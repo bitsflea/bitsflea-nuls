@@ -15,7 +15,7 @@ public class Global {
     public short feeRate = 50;
     /**
      * 引荐佣金率,100%=1000
-     * 引用佣金从平台抽佣中支出
+     * 引荐佣金从平台抽佣中支出
      */
     public short refCommRate = 50;
     /**
