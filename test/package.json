@@ -12,12 +12,13 @@
     "mocha": "^11.0.1"
   },
   "scripts": {
-    "test": "yarn index && yarn deposit && yarn user && yarn reviewer && yarn market && yarn platform",
-    "index":"mocha index.js",
+    "test": "yarn index && yarn deposit && yarn user && yarn reviewer && yarn market && yarn platform && yarn referrer",
+    "index": "mocha index.js",
     "deposit": "mocha deposit.js",
     "user": "mocha user.js",
     "reviewer": "mocha reviewer.js",
     "market": "mocha market.js",
-    "platform": "mocha platform.js"
+    "platform": "mocha platform.js",
+    "referrer": "mocha referrer.js"
   }
 }
