@@ -259,6 +259,13 @@ public class BitsFlea extends Ownable implements Contract, IPlatform, IUser, IMa
     @View
     @JSONSerializable
     @Override
+    public Map<Integer, Categories> getCategories() {
+        return categories;
+    }
+
+    @View
+    @JSONSerializable
+    @Override
     public ProductAudit getProductAudit(BigInteger id) {
         return productAudits.get(id);
     }

@@ -13,6 +13,8 @@ describe("Market", function () {
 
     let pid;
     let delistPid;
+    const description = "bafkreicussxvfkjeavtq564hgpk3rfqjeauxvdibtsq5mr372vmt73gih4";
+    const location = "34.0522,-118.2437|US,Los Angeles,California";
 
     before(async function () {
         bitsflea = await sdk.contract(contract);
@@ -43,7 +45,7 @@ describe("Market", function () {
         let price = parseNULS(100).toString();
         console.log(`postage: ${postage} price: ${price}`);
 
-        let txHash = await bitsflea.publish(pid, 1, "description", true, false, true, "position", 0, 1, 1,
+        let txHash = await bitsflea.publish(pid, 1, description, true, false, true, location, 0, 1, 1,
             `${postage},0,0`, `${price},0,0`);
 
         let txResult = await sdk.waitingResult(txHash);
@@ -51,7 +53,7 @@ describe("Market", function () {
         assert.ok(pid == event.payload.pid, "pid error");
         assert.ok(sdk.sender == event.payload.uid, "uid error");
 
-        await bitsflea.publish(pid, 1, "description", true, false, true, "position", 0, 1, 1,
+        await bitsflea.publish(pid, 1, description, true, false, true, location, 0, 1, 1,
             `${postage},0,0`, `${price},0,0`).catch(reason => {
                 assert.equal(reason, "20001", "20001 error");
             });
@@ -59,37 +61,37 @@ describe("Market", function () {
         pid = await bitsflea.newProductId(sdk.sender);
         pid = pid.toString(10);
 
-        await bitsflea.publish(pid, 2, "description", true, false, true, "position", 0, 1, 1,
+        await bitsflea.publish(pid, 2, description, true, false, true, location, 0, 1, 1,
             `${postage},0,0`, `${price},0,0`).catch(reason => {
                 assert.equal(reason, "20025", "20025 error");
             });
 
-        await bitsflea.publish(pid, 1, "description", true, false, true, "position", 0, 0, 1,
+        await bitsflea.publish(pid, 1, description, true, false, true, location, 0, 0, 1,
             `${postage},0,0`, `${price},0,0`).catch(reason => {
                 assert.equal(reason, "20002", "20002 error");
             });
 
-        await bitsflea.publish(pid, 1, "description", true, false, true, "position", 2, 1, 1,
+        await bitsflea.publish(pid, 1, description, true, false, true, location, 2, 1, 1,
             `${postage},0,0`, `${price},0,0`).catch(reason => {
                 assert.equal(reason, "20004", "20004 error");
             });
 
-        await bitsflea.publish(pid, 1, "description", true, false, true, "position", 0, 1, 2,
+        await bitsflea.publish(pid, 1, description, true, false, true, location, 0, 1, 2,
             `${postage},0,0`, `${price},0,0`).catch(reason => {
                 assert.equal(reason, "20005", "20005 error");
             });
 
-        await bitsflea.publish(pid, 1, "description", true, false, true, "position", 0, 1, 1,
+        await bitsflea.publish(pid, 1, description, true, false, true, location, 0, 1, 1,
             `${postage},3,1`, `${price},3,1`).catch(reason => {
                 assert.equal(reason, "20022", "20022 error");
             });
 
-        await bitsflea.publish(pid, 1, "description", true, false, true, "position", 0, 1, 1,
+        await bitsflea.publish(pid, 1, description, true, false, true, location, 0, 1, 1,
             `${postage},0,0`, `${price},3,1`).catch(reason => {
                 assert.equal(reason, "20018", "20018 error");
             });
 
-        await bitsflea.publish(pid, 1, "description", true, false, true, "position", 0, 1, 1,
+        await bitsflea.publish(pid, 1, description, true, false, true, location, 0, 1, 1,
             `-1,0,0`, `${price},0,0`).catch(reason => {
                 assert.equal(reason, "20020", "20020 error");
             });
@@ -126,7 +128,7 @@ describe("Market", function () {
 
         let postage = parseNULS(10).toString();
         let price = parseNULS(100).toString();
-        await sdk.waitingResult(await bitsflea.publish(pid, 1, "description2", true, false, true, "position2", 0, 1, 1,
+        await sdk.waitingResult(await bitsflea.publish(pid, 1, description, true, false, true, location, 0, 1, 1,
             `${postage},0,0`, `${price},0,0`));
 
         console.log("pid:", pid);
@@ -135,26 +137,26 @@ describe("Market", function () {
         let orderId = await bitsflea.newOrderId(bob.sender, delistPid);
         orderId = orderId.toString(10);
         console.log("orderId:", orderId);
-        await bitsflea.connect(bob.accountPri).placeOrder(orderId).catch(reason => {
+        await bitsflea.connect(bob.accountPri).placeOrder(orderId, 1).catch(reason => {
             assert.equal(reason, "20007", "20007 error");
         });
 
         orderId = await bitsflea.newOrderId(sdk.sender, pid);
         orderId = orderId.toString(10);
         console.log("orderId:", orderId);
-        await bitsflea.connect(sdk.accountPri).placeOrder(orderId).catch(reason => {
+        await bitsflea.connect(sdk.accountPri).placeOrder(orderId, 1).catch(reason => {
             assert.equal(reason, "20010", "20010 error");
         });
 
         orderId = await bitsflea.newOrderId(bob.sender, pid);
         orderId = orderId.toString(10);
         console.log("orderId:", orderId);
-        await bitsflea.connect(bob.accountPri).placeOrder(`1${orderId}`).catch(reason => {
+        await bitsflea.connect(bob.accountPri).placeOrder(`1${orderId}`, 1).catch(reason => {
             assert.equal(reason, "20009", "20009 error");
         });
 
         // Success placed an order
-        let txHash = await bitsflea.connect(bob.accountPri).placeOrder(orderId);
+        let txHash = await bitsflea.connect(bob.accountPri).placeOrder(orderId, 1);
         await sdk.waitingResult(txHash);
 
         let [product, order] = await Promise.all([
@@ -223,9 +225,60 @@ describe("Market", function () {
         order = await bitsflea.getOrder(orderId);
         assert.equal(order.status, 600, "order status error");
 
-        await bitsflea.connect(bob.accountPri).confirmReceipt(orderId).catch(reason=>{
+        await bitsflea.connect(bob.accountPri).confirmReceipt(orderId).catch(reason => {
             assert.equal(reason, "20011", "20011 error");
         });
+    });
+
+    it("placeOrder stockCount", async () => {
+        pid = await bitsflea.newProductId(sdk.sender);
+        pid = pid.toString(10);
+        console.log("pid:", pid);
+
+        let postage = parseNULS(10).toString();
+        let price = parseNULS(100).toString();
+        await sdk.waitingResult(await bitsflea.connect(sdk.accountPri).publish(pid, 1, description, true, false, true, location, 0, 2, 1,
+            `${postage},0,0`, `${price},0,0`));
+
+        await sdk.waitingResult(await bitsflea.connect(alice.accountPri).review(pid, false, "商品合格"));
+
+        let orderId = await bitsflea.newOrderId(bob.sender, pid);
+        orderId = orderId.toString(10);
+        console.log("orderId:", orderId);
+
+        let txHash = await bitsflea.connect(bob.accountPri).placeOrder(orderId, 1);
+        await sdk.waitingResult(txHash);
+
+        let [product, order] = await Promise.all([
+            bitsflea.getProduct(pid),
+            bitsflea.getOrder(orderId)
+        ]);
+        console.log("order:", order);
+        assert.equal(product.status, 100, "product status error");
+        assert.equal(order.status, 0, "order status error");
+        assert.equal(order.amount.value, price, "order price error");
+        assert.equal(order.postage.value, postage, "order postage error");
+        assert.equal(order.buyer, bob.sender, "order buyer error");
+        assert.equal(order.seller, sdk.sender, "order seller error");
+
+        orderId = await bitsflea.newOrderId(bob.sender, pid);
+        orderId = orderId.toString(10);
+        console.log("orderId:", orderId);
+
+        txHash = await bitsflea.connect(bob.accountPri).placeOrder(orderId, 1);
+        await sdk.waitingResult(txHash);
+
+        [product, order] = await Promise.all([
+            bitsflea.getProduct(pid),
+            bitsflea.getOrder(orderId)
+        ]);
+        console.log("order:", order);
+        assert.equal(product.status, 400, "product status error");
+        assert.equal(order.status, 0, "order status error");
+        assert.equal(order.amount.value, price, "order price error");
+        assert.equal(order.postage.value, postage, "order postage error");
+        assert.equal(order.buyer, bob.sender, "order buyer error");
+        assert.equal(order.seller, sdk.sender, "order seller error");
     });
 
 });

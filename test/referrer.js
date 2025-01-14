@@ -14,6 +14,9 @@ describe('Referrer', function () {
     let bob;
     let HanMeimei;
 
+    const description = "bafkreicussxvfkjeavtq564hgpk3rfqjeauxvdibtsq5mr372vmt73gih4";
+    const location = "34.0522,-118.2437|US,Los Angeles,California";
+
     before(async () => {
         bitsflea = await sdk.contract(contract);
         alice = sdk.account(env.KEY_ALICE);
@@ -36,14 +39,15 @@ describe('Referrer', function () {
             let phoneHash = tools.getHash(phone);
             let phoneEncrypt = tools.encrypt(env.KEY_HANMEIMEI, encryptKey, phone);
             let referrer = alice.sender;
-            let head = "";
+            let head = "bafkreigwtvsing3bzjhmhhfv3nnerll5ouw2xjizqytt6qppctv7wbteam";
+            let extendInfo = "bafkreihcv2kpbmdjdf7rq3lcnvon6yc4k6fsuxwhsaxe7ue7ft4b3lzwpm";
 
             // transfer
             await point.connect(sdk.accountPri).transfer(HanMeimei.sender, parseNULS(500));
             await sdk.waitingTx(await sdk.transfer(HanMeimei.sender, parseNULS(10)));
 
             let balance1 = await point.balanceOf(alice.sender);
-            result = await bitsflea.connect(HanMeimei.accountPri).regUser(nickname, phoneHash, phoneEncrypt, referrer, head);
+            result = await bitsflea.connect(HanMeimei.accountPri).regUser(nickname, phoneHash, phoneEncrypt, referrer, head, extendInfo);
             await sdk.waitingResult(result);
             let balance2 = await point.balanceOf(alice.sender);
             assert.equal(balance2.minus(balance1).toString(10), parseNULS(100).toString(10), "alice balance error");
@@ -57,7 +61,7 @@ describe('Referrer', function () {
         let postage = parseNULS(10).toString();
         let price = parseNULS(100).toString();
 
-        let txHash = await bitsflea.connect(sdk.accountPri).publish(pid, 1, "description", true, false, true, "position", 0, 1, 1,
+        let txHash = await bitsflea.connect(sdk.accountPri).publish(pid, 1, description, true, false, true, location, 0, 1, 1,
             `${postage},0,0`, `${price},0,0`);
         await sdk.waitingResult(txHash);
 
@@ -67,7 +71,7 @@ describe('Referrer', function () {
         // HanMeimei buy product
         let orderId = await bitsflea.newOrderId(HanMeimei.sender, pid);
         orderId = orderId.toString(10);
-        await sdk.waitingResult(await bitsflea.connect(HanMeimei.accountPri).placeOrder(orderId));
+        await sdk.waitingResult(await bitsflea.connect(HanMeimei.accountPri).placeOrder(orderId, 1));
         // HanMeimei pay order
         let pointAddress = await bitsflea.getPoint();
         let point = await sdk.contract(pointAddress);

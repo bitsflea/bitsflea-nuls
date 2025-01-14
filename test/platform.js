@@ -15,6 +15,9 @@ describe("Platform", function () {
     let carol;  // reviewer
     let lilei;  // user
 
+    const description = "bafkreicussxvfkjeavtq564hgpk3rfqjeauxvdibtsq5mr372vmt73gih4";
+    const location = "34.0522,-118.2437|US,Los Angeles,California";
+
     before(async function () {
         bitsflea = await sdk.contract(contract);
         alice = sdk.account(env.KEY_ALICE);
@@ -37,7 +40,7 @@ describe("Platform", function () {
             let postage = parseNULS(10).toString();
             let price = parseNULS(100).toString();
 
-            let txHash = await bitsflea.connect(sdk.accountPri).publish(pid, 1, "description", true, false, true, "position", 0, 1, 1,
+            let txHash = await bitsflea.connect(sdk.accountPri).publish(pid, 1, description, true, false, true, location, 0, 1, 1,
                 `${postage},0,0`, `${price},0,0`);
             await sdk.waitingResult(txHash);
         });
@@ -88,7 +91,7 @@ describe("Platform", function () {
             let postage = parseNULS(10).toString();
             let price = parseNULS(100).toString();
 
-            let txHash = await bitsflea.connect(lilei.accountPri).publish(pid, 1, "description", true, false, true, "position", 0, 1, 1,
+            let txHash = await bitsflea.connect(lilei.accountPri).publish(pid, 1, description, true, false, true, location, 0, 1, 1,
                 `${postage},0,0`, `${price},0,0`);
             await sdk.waitingResult(txHash);
 
@@ -190,7 +193,7 @@ describe("Platform", function () {
             pid = await bitsflea.newProductId(lilei.sender);
             pid = pid.toString(10);
 
-            let txHash = await bitsflea.connect(lilei.accountPri).publish(pid, 1, "description", true, false, true, "position", 0, 1, 1,
+            let txHash = await bitsflea.connect(lilei.accountPri).publish(pid, 1, description, true, false, true, location, 0, 1, 1,
                 `${postage},0,0`, `${price},0,0`);
             await sdk.waitingResult(txHash);
 
@@ -202,7 +205,7 @@ describe("Platform", function () {
             // owner buy product
             orderId = await bitsflea.newOrderId(sdk.sender, pid);
             orderId = orderId.toString(10);
-            await sdk.waitingResult(await bitsflea.connect(sdk.accountPri).placeOrder(orderId));
+            await sdk.waitingResult(await bitsflea.connect(sdk.accountPri).placeOrder(orderId, 1));
             // owner pay order
             let pointAddress = await bitsflea.getPoint();
             let point = await sdk.contract(pointAddress);
@@ -258,7 +261,7 @@ describe("Platform", function () {
             // owner buy product
             orderId = await bitsflea.newOrderId(sdk.sender, pid);
             orderId = orderId.toString(10);
-            await sdk.waitingResult(await bitsflea.connect(sdk.accountPri).placeOrder(orderId));
+            await sdk.waitingResult(await bitsflea.connect(sdk.accountPri).placeOrder(orderId, 1));
             // owner pay order
             let pointAddress = await bitsflea.getPoint();
             let point = await sdk.contract(pointAddress);

@@ -1,9 +1,11 @@
 package com.bitsflea.interfaces;
 
 import java.math.BigInteger;
+import java.util.Map;
 
 import com.bitsflea.model.Order;
 import com.bitsflea.model.Product;
+import com.bitsflea.model.Product.Categories;
 import com.bitsflea.model.ProductReturn;
 
 import io.nuls.contract.sdk.Address;
@@ -187,4 +189,10 @@ public interface IMarket {
      * @param oid
      */
     void releaseOrder(BigInteger oid);
+
+    /**
+     * 获取所有分类
+     * @return
+     */
+    Map<Integer, Categories> getCategories();
 }

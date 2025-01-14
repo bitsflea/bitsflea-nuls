@@ -18,6 +18,9 @@ describe('ChainAsset', function () {
 
     let commissionAddr = "tNULSeBaMg3uA6d68rchxgu6a1jrGw1GQwkBBJ";
 
+    const description = "bafkreicussxvfkjeavtq564hgpk3rfqjeauxvdibtsq5mr372vmt73gih4";
+    const location = "34.0522,-118.2437|US,Los Angeles,California";
+
     before(async () => {
         bitsflea = await sdk.contract(contract);
         alice = sdk.account(env.KEY_ALICE);
@@ -58,7 +61,7 @@ describe('ChainAsset', function () {
         let postage = parseNULS(0.1).toString();
         let price = parseNULS(1).toString();
 
-        let txHash = await bitsflea.connect(sdk.accountPri).publish(pid, 1, "description", true, false, true, "position", 0, 1, 1,
+        let txHash = await bitsflea.connect(sdk.accountPri).publish(pid, 1, description, true, false, true, location, 0, 1, 1,
             `${postage},5,1`, `${price},5,1`);
         await sdk.waitingResult(txHash);
 
@@ -68,7 +71,7 @@ describe('ChainAsset', function () {
         // HanMeimei buy product
         let orderId = await bitsflea.newOrderId(HanMeimei.sender, pid);
         orderId = orderId.toString(10);
-        await sdk.waitingResult(await bitsflea.connect(HanMeimei.accountPri).placeOrder(orderId));
+        await sdk.waitingResult(await bitsflea.connect(HanMeimei.accountPri).placeOrder(orderId, 1));
         // HanMeimei pay order
         await sdk.waitingResult(await bitsflea.payOrder(orderId, {
             multyAssetArray: [{

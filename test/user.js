@@ -25,9 +25,10 @@ describe('User', function () {
         let phoneHash = tools.getHash(phone);
         let phoneEncrypt = tools.encrypt(env.KEY_SENDER, result.encryptKey, phone);
         let referrer = "";
-        let head = "";
+        let head = "bafkreigwtvsing3bzjhmhhfv3nnerll5ouw2xjizqytt6qppctv7wbteam";
+        let extendInfo = "bafkreihcv2kpbmdjdf7rq3lcnvon6yc4k6fsuxwhsaxe7ue7ft4b3lzwpm";
 
-        result = await bitsflea.regUser(nickname, phoneHash, phoneEncrypt, referrer, head);
+        result = await bitsflea.regUser(nickname, phoneHash, phoneEncrypt, referrer, head, extendInfo);
         console.log("regUser:", result);
 
         await sdk.waitingResult(result);
