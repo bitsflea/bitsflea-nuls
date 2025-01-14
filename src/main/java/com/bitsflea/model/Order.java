@@ -16,6 +16,10 @@ public class Order {
      */
     public BigInteger pid;
     /**
+     * 商品数量
+     */
+    public int quantity;
+    /**
      * 卖家
      */
     public Address seller;

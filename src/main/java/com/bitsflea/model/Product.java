@@ -22,7 +22,7 @@ public class Product {
     /**
      * 商品详细说明, 存储在IPFS的url
      * 格式如下:
-     * {"title":"","description":"","photos":[]}
+     * {name: "",images:[cid],description:""}
      */
     public String description;
     /**

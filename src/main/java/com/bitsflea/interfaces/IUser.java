@@ -14,12 +14,14 @@ public interface IUser {
      * @param phoneEncrypt 加密的电话号
      * @param referrer     引荐人地址
      * @param head         用户头像
+     * @param extendInfo   用户扩展信息
      */
     void regUser(@Required String nickname,
             @Required String phoneHash,
             @Required String phoneEncrypt,
             Address referrer,
-            String head);
+            String head,
+            String extendInfo);
 
     /**
      * 设置用户信息
@@ -36,6 +38,7 @@ public interface IUser {
 
     /**
      * 获取指定id的用户
+     * 
      * @param uid
      * @return
      */

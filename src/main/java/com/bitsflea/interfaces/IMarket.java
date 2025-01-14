@@ -12,8 +12,9 @@ import io.nuls.contract.sdk.annotation.Required;
 public interface IMarket {
     /**
      * 添加类型
-     * @param id 类型标识
-     * @param view 显示名称
+     * 
+     * @param id     类型标识
+     * @param view   显示名称
      * @param parent 父类型标识
      */
     void addCategory(int id, String view, int parent);
@@ -58,9 +59,10 @@ public interface IMarket {
      * 买家下订单, 普通订单, 即一个商品只卖一次(不考虑库存)
      * 合约会验证订单id中的商品id与下单人hashCode
      * 
-     * @param orderId 订单id
+     * @param orderId  订单id
+     * @param quantity 购买数量
      */
-    void placeOrder(@Required BigInteger orderId);
+    void placeOrder(@Required BigInteger orderId, int quantity);
 
     /**
      * 取消订单
@@ -132,6 +134,7 @@ public interface IMarket {
 
     /**
      * 获取指定id的商品
+     * 
      * @param pid
      * @return
      */
@@ -139,6 +142,7 @@ public interface IMarket {
 
     /**
      * 获取指定id的订单
+     * 
      * @param oid
      * @return
      */
@@ -146,6 +150,7 @@ public interface IMarket {
 
     /**
      * 获取指定订单id的商品退货记录
+     * 
      * @param oid
      * @return
      */
@@ -153,6 +158,7 @@ public interface IMarket {
 
     /**
      * 新生成一个商品id
+     * 
      * @param sender
      * @return
      */
@@ -160,9 +166,25 @@ public interface IMarket {
 
     /**
      * 新生成一个订单id
+     * 
      * @param sender
      * @param pid
      * @return
      */
     BigInteger newOrderId(Address sender, BigInteger pid);
+
+    /**
+     * 添加库存数量
+     * 
+     * @param pid   商品id
+     * @param count 添加数量
+     */
+    void addStockCount(BigInteger pid, int count);
+
+    /**
+     * 释放未支付订单(卖家取消订单)
+     * 
+     * @param oid
+     */
+    void releaseOrder(BigInteger oid);
 }

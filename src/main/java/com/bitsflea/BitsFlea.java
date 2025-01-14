@@ -331,7 +331,8 @@ public class BitsFlea extends Ownable implements Contract, IPlatform, IUser, IMa
     }
 
     @Override
-    public void regUser(String nickname, String phoneHash, String phoneEncrypt, Address referrer, String head) {
+    public void regUser(String nickname, String phoneHash, String phoneEncrypt, Address referrer, String head,
+            String extendInfo) {
         Address uid = Msg.sender();
         require(!users.containsKey(uid) && !phones.containsKey(phoneHash), Error.ALREADY_REGISTERED);
 
@@ -356,6 +357,7 @@ public class BitsFlea extends Ownable implements Contract, IPlatform, IUser, IMa
         user.lastActiveTime = Block.timestamp();
         user.status = User.UserStatus.NONE;
         user.encryptKey = Msg.senderPublicKey();
+        user.extendInfo = extendInfo;
         users.put(uid, user);
 
         global.totalUsers += 1;
@@ -439,6 +441,24 @@ public class BitsFlea extends Ownable implements Contract, IPlatform, IUser, IMa
     }
 
     @Override
+    public void addStockCount(BigInteger pid, int count) {
+        require(count > 0, Error.PARAMETER_ERROR);
+        Address uid = Msg.sender();
+        require(!isLock(uid), Error.USER_LOCKED);
+        Helper.checkProductId(pid, uid);
+
+        require(products.containsKey(pid), Error.PRODUCT_DOES_NOT_EXIST);
+        Product product = products.get(pid);
+        require(product.status == Product.ProductStatus.NORMAL || product.status == Product.ProductStatus.COMPLETED,
+                Error.PRODUCT_INVALID_STATUS);
+
+        product.stockCount += count;
+        if (product.status == Product.ProductStatus.LOCKED || product.status == Product.ProductStatus.COMPLETED) {
+            product.status = Product.ProductStatus.NORMAL;
+        }
+    }
+
+    @Override
     public void delist(BigInteger pid) {
         Address uid = Msg.sender();
         require(!isLock(uid), Error.USER_LOCKED);
@@ -454,7 +474,7 @@ public class BitsFlea extends Ownable implements Contract, IPlatform, IUser, IMa
     }
 
     @Override
-    public void placeOrder(BigInteger orderId) {
+    public void placeOrder(BigInteger orderId, int quantity) {
         Address uid = Msg.sender();
         require(!isLock(uid), Error.USER_LOCKED);
         Helper.checkOrderId(orderId, uid);
@@ -462,6 +482,7 @@ public class BitsFlea extends Ownable implements Contract, IPlatform, IUser, IMa
         BigInteger pid = Helper.getPidByOrderId(orderId);
         require(products.containsKey(pid), Error.PRODUCT_INVALID_ID);
         Product product = products.get(pid);
+        require(quantity > 0 && quantity <= product.stockCount, Error.PARAMETER_ERROR);
         require(product.status == Product.ProductStatus.NORMAL, Error.PRODUCT_INVALID_STATUS);
         require(!product.uid.equals(uid), Error.PRODUCT_CANT_BUY_YOUR_OWN);
 
@@ -470,14 +491,19 @@ public class BitsFlea extends Ownable implements Contract, IPlatform, IUser, IMa
         order.pid = pid;
         order.seller = product.uid;
         order.buyer = uid;
-        order.amount = product.price;
+        order.quantity = quantity;
+        order.amount = new MultyAssetValue(product.price.getValue().multiply(BigInteger.valueOf(quantity)),
+                product.price.getAssetChainId(), product.price.getAssetId());
         order.postage = product.postage;
         order.status = Order.OrderStatus.OS_PENDING_PAYMENT;
         order.createTime = Block.timestamp();
         order.payTimeOut = Block.timestamp() + global.payTimeOut;
         orders.put(orderId, order);
 
-        product.status = Product.ProductStatus.LOCKED;
+        product.stockCount -= quantity;
+        if (product.stockCount == 0) {
+            product.status = Product.ProductStatus.LOCKED;
+        }
 
         emit(new CreateOrderEvent(orderId, pid, order.seller, order.buyer, order.amount, order.postage,
                 order.createTime, order.payTimeOut));
@@ -502,11 +528,40 @@ public class BitsFlea extends Ownable implements Contract, IPlatform, IUser, IMa
         }
 
         Product product = products.get(pid);
-        product.status = Product.ProductStatus.NORMAL;
+        product.stockCount += order.quantity;
+        if (product.status == Product.ProductStatus.LOCKED) {
+            product.status = Product.ProductStatus.NORMAL;
+        }
 
         orders.remove(orderId);
 
         emit(new CancelOrderEvent(orderId, pid, uid, Block.timestamp()));
+    }
+
+    @Override
+    public void releaseOrder(BigInteger oid) {
+        Address uid = Msg.sender();
+        require(!isLock(uid), Error.USER_LOCKED);
+        require(orders.containsKey(oid), Error.INVALID_ORDER_ID);
+
+        Order order = orders.get(oid);
+        require(order.seller.equals(uid), Error.ORDER_IS_NOT_YOURS);
+        require(order.status == Order.OrderStatus.OS_PENDING_PAYMENT, Error.INVALID_ORDER_STATUS);
+        require(order.payTimeOut < Block.timestamp(), Error.INVALID_ORDER_STATUS);
+
+        // 处理信用分
+        subCredit(order.buyer, global.creditPayTimeOut);
+
+        BigInteger pid = order.pid;
+        Product product = products.get(pid);
+        product.stockCount += order.quantity;
+        if (product.status == Product.ProductStatus.LOCKED) {
+            product.status = Product.ProductStatus.NORMAL;
+        }
+
+        orders.remove(oid);
+
+        emit(new CancelOrderEvent(oid, pid, uid, Block.timestamp()));
     }
 
     @Override
@@ -597,7 +652,8 @@ public class BitsFlea extends Ownable implements Contract, IPlatform, IUser, IMa
         pr.endTime = Block.timestamp();
 
         Product product = products.get(order.pid);
-        product.status = Product.ProductStatus.NORMAL; // TODO: 如果是零售，这里可以还原数量
+        product.status = Product.ProductStatus.NORMAL;
+        product.stockCount += order.quantity;
 
         // 处理信用分
         if (Block.timestamp() > pr.receiptTimeOut) {
@@ -827,7 +883,7 @@ public class BitsFlea extends Ownable implements Contract, IPlatform, IUser, IMa
             if (pid != null) {
                 require(products.containsKey(pid), Error.PRODUCT_INVALID_ID);
                 Product product = products.get(pid);
-                product.status = Product.ProductStatus.LOCKED;
+                product.status = Product.ProductStatus.DELISTED;
             } else {
                 return;
             }
@@ -1050,7 +1106,9 @@ public class BitsFlea extends Ownable implements Contract, IPlatform, IUser, IMa
         order.clearTime = Block.timestamp() + global.clearOrderTime;
 
         Product product = products.get(order.pid);
-        product.status = Product.ProductStatus.COMPLETED; // 如果是可以零售时，在这里扣除锁定数量
+        if (product.stockCount == 0) {
+            product.status = Product.ProductStatus.COMPLETED;
+        }
 
         User seller = users.get(order.seller);
         User buyer = users.get(order.buyer);

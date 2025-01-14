@@ -35,6 +35,10 @@ public class User {
      */
     public String phoneEncrypt;
     /**
+     * 用户扩展信息,如社交账号等。CID
+     */
+    public String extendInfo;
+    /**
      * 引荐人地址
      */
     public Address referrer;
