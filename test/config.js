@@ -4,5 +4,5 @@ dotenv.config();
 import { NULSAPI } from "nuls-api-v2";
 
 export const env = process.env;
-export const contract = "tNULSeBaN25qGpG23MmJscb2k7DNFvwLqnzVod";
+export const contract = "tNULSeBaN666jUUFtq1vkWUbfPPuq8iTgzsNn2";
 export const sdk = new NULSAPI({ rpcURL: "http://beta.api.nuls.io/jsonrpc", isBeta: true, accountPri: env.KEY_SENDER });

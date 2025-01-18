@@ -18,7 +18,7 @@ describe('ChainAsset', function () {
 
     let commissionAddr = "tNULSeBaMg3uA6d68rchxgu6a1jrGw1GQwkBBJ";
 
-    const description = "bafkreicussxvfkjeavtq564hgpk3rfqjeauxvdibtsq5mr372vmt73gih4";
+    const description = "bafkreiacxqnvmjorxcpxsh5zucj32s5bmn3b6lt6dpyn26tid6g3emjp5y";
     const location = "34.0522,-118.2437|US,Los Angeles,California";
 
     before(async () => {

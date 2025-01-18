@@ -48,6 +48,6 @@ describe('User', function () {
 
         info = await bitsflea.getUser(sdk.sender);
         // console.log("info:", info);
-        assert.equal(info.head, "http://1110", "head error");
+        assert.equal(info.head, "https://ix-marketing.imgix.net/genfill.png?auto=format,compress&w=3038", "head error");
     });
 });
