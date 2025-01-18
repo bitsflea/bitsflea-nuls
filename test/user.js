@@ -42,7 +42,7 @@ describe('User', function () {
     it("Set Profile", async function () {
         let info = await bitsflea.getUser(sdk.sender);
         // console.log("info:", info);
-        let txHash = await bitsflea.setProfile(null, "http://1110");
+        let txHash = await bitsflea.setProfile(null, "https://ix-marketing.imgix.net/genfill.png?auto=format,compress&w=3038", "bafkreidvtlajlk4l5osidgd6yautr7iflbhxm5yxfillc6d2aa3upn65yu");
 
         await sdk.waitingResult(txHash);
 

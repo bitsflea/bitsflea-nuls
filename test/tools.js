@@ -13,7 +13,7 @@ export function getHash(data) {
 }
 
 export function getPublic(privateKey) {
-    return ec.keyFromPrivate(privateKey).getPublic(true, "hex");
+    return ec.keyFromPrivate(privateKey).getPublic(false, "hex");
 }
 
 export function createShareKey(priKey, pubKey) {

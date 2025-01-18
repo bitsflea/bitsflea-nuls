@@ -53,6 +53,7 @@ import io.nuls.contract.sdk.MultyAssetValue;
 import io.nuls.contract.sdk.annotation.JSONSerializable;
 import io.nuls.contract.sdk.annotation.Payable;
 import io.nuls.contract.sdk.annotation.PayableMultyAsset;
+import io.nuls.contract.sdk.annotation.Required;
 import io.nuls.contract.sdk.annotation.View;
 import io.nuls.contract.sdk.token.NRC20Wrapper;
 
@@ -369,11 +370,27 @@ public class BitsFlea extends Ownable implements Contract, IPlatform, IUser, IMa
 
         global.totalUsers += 1;
 
+        phones.put(phoneHash, true);
+
         emit(new RegUserEvent(uid, nickname, phoneEncrypt));
     }
 
     @Override
-    public void setProfile(String nickname, String head) {
+    public void updatePhone(@Required String phoneHash, @Required String phoneEncrypt) {
+        Address uid = Msg.sender();
+        require(users.containsKey(uid) && !phones.containsKey(phoneHash), Error.PARAMETER_ERROR);
+
+        User user = users.get(uid);
+        phones.remove(user.phoneHash);
+        user.phoneHash = phoneHash;
+        user.phoneEncrypt = phoneEncrypt;
+        phones.put(phoneHash, true);
+
+        emit(new UpdateUserEvent(uid));
+    }
+
+    @Override
+    public void setProfile(String nickname, String head, String extendInfo) {
         Address uid = Msg.sender();
         require(!isLock(uid), Error.USER_LOCKED);
 
@@ -383,6 +400,9 @@ public class BitsFlea extends Ownable implements Contract, IPlatform, IUser, IMa
         }
         if (head != null && !head.isEmpty()) {
             user.head = head;
+        }
+        if (extendInfo != null && !extendInfo.isEmpty()) {
+            user.extendInfo = extendInfo;
         }
         emit(new UpdateUserEvent(uid));
     }

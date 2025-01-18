@@ -29,7 +29,7 @@ public interface IUser {
      * @param nickname 昵称
      * @param head     头像
      */
-    void setProfile(String nickname, String head);
+    void setProfile(String nickname, String head, String extendInfo);
 
     /**
      * 申请成为评审员
@@ -43,4 +43,11 @@ public interface IUser {
      * @return
      */
     User getUser(Address uid);
+
+    /**
+     * 更新手机号
+     * @param phoneHash
+     * @param phoneEncrypt
+     */
+    void updatePhone(@Required String phoneHash, @Required String phoneEncrypt);
 }
