@@ -9,6 +9,7 @@ describe('Bitsflea', function () {
     describe("Crypto", function () {
         it("Shared key symmetric encryption", function () {
             const msg = "158359999";
+            //tNULSeBaN1pFZDRf5DzqGPqC4juCYExdbv1zKk
 
             const aPriKey = "768e3f0587303809ba4c80f2b7d1b15b839a9398439d02d8789e5c1a1962323c";
             const aPubKey = tools.getPublic(aPriKey);

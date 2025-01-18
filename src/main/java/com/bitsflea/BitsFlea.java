@@ -132,7 +132,7 @@ public class BitsFlea extends Ownable implements Contract, IPlatform, IUser, IMa
 
     public BitsFlea(Address pointAddr) {
         global = new Global();
-        global.encryptKey = "02ebefd8efa16620f80eb79d6b588a93b38239c42722f12177ca40c9fa8ddf78c0";
+        global.encryptKey = "046c51ef77f20de89defcb97a125921c637c06cbcfa0bd1d38e3506243333b007b0f146c50443cc9f77da6ac94b9473667f18cb9d9d0c10faa2b56ae5e7aab21aa";
         global.commission = new Address("tNULSeBaMg3uA6d68rchxgu6a1jrGw1GQwkBBJ");
         phones = new HashMap<String, Boolean>();
         products = new HashMap<BigInteger, Product>();
