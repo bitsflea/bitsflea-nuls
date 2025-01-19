@@ -385,6 +385,7 @@ public class BitsFlea extends Ownable implements Contract, IPlatform, IUser, IMa
         user.phoneHash = phoneHash;
         user.phoneEncrypt = phoneEncrypt;
         phones.put(phoneHash, true);
+        user.lastActiveTime = Block.timestamp();
 
         emit(new UpdateUserEvent(uid));
     }
@@ -404,6 +405,7 @@ public class BitsFlea extends Ownable implements Contract, IPlatform, IUser, IMa
         if (extendInfo != null && !extendInfo.isEmpty()) {
             user.extendInfo = extendInfo;
         }
+        user.lastActiveTime = Block.timestamp();
         emit(new UpdateUserEvent(uid));
     }
 
@@ -422,6 +424,9 @@ public class BitsFlea extends Ownable implements Contract, IPlatform, IUser, IMa
         reviewer.againstCount = 0;
         reviewer.voted = new HashMap<Address, Boolean>();
         reviewers.put(uid, reviewer);
+
+        User user = users.get(uid);
+        user.lastActiveTime = Block.timestamp();
         emit(new CreateReviewerEvent(uid, reviewer.createTime));
     }
 
@@ -464,6 +469,9 @@ public class BitsFlea extends Ownable implements Contract, IPlatform, IUser, IMa
 
         products.put(product.pid, product);
 
+        User user = users.get(uid);
+        user.lastActiveTime = Block.timestamp();
+
         emit(new PublishProductEvent(pid, product.uid));
     }
 
@@ -483,6 +491,9 @@ public class BitsFlea extends Ownable implements Contract, IPlatform, IUser, IMa
         if (product.status == Product.ProductStatus.LOCKED || product.status == Product.ProductStatus.COMPLETED) {
             product.status = Product.ProductStatus.NORMAL;
         }
+
+        User user = users.get(uid);
+        user.lastActiveTime = Block.timestamp();
     }
 
     @Override
@@ -496,6 +507,9 @@ public class BitsFlea extends Ownable implements Contract, IPlatform, IUser, IMa
         require(product.uid.equals(uid), Error.PRODUCT_IS_NOT_YOURS);
 
         product.status = Product.ProductStatus.DELISTED;
+
+        User user = users.get(uid);
+        user.lastActiveTime = Block.timestamp();
 
         emit(new DelistProductEvent(pid, uid));
     }
@@ -532,6 +546,9 @@ public class BitsFlea extends Ownable implements Contract, IPlatform, IUser, IMa
             product.status = Product.ProductStatus.LOCKED;
         }
 
+        User user = users.get(uid);
+        user.lastActiveTime = Block.timestamp();
+
         emit(new CreateOrderEvent(orderId, pid, order.seller, order.buyer, order.amount, order.postage,
                 order.createTime, order.payTimeOut));
     }
@@ -562,6 +579,9 @@ public class BitsFlea extends Ownable implements Contract, IPlatform, IUser, IMa
 
         orders.remove(orderId);
 
+        User user = users.get(uid);
+        user.lastActiveTime = Block.timestamp();
+
         emit(new CancelOrderEvent(orderId, pid, uid, Block.timestamp()));
     }
 
@@ -588,6 +608,9 @@ public class BitsFlea extends Ownable implements Contract, IPlatform, IUser, IMa
 
         orders.remove(oid);
 
+        User user = users.get(uid);
+        user.lastActiveTime = Block.timestamp();
+
         emit(new CancelOrderEvent(oid, pid, uid, Block.timestamp()));
     }
 
@@ -612,6 +635,9 @@ public class BitsFlea extends Ownable implements Contract, IPlatform, IUser, IMa
         if (Block.timestamp() > order.shipTimeOut) {
             subCredit(uid, global.creditShipmentsTimeout);
         }
+
+        User user = users.get(uid);
+        user.lastActiveTime = Block.timestamp();
 
         emit(new ShipmentsEvent(orderId, number, order.status, order.shipTime));
     }
@@ -641,6 +667,9 @@ public class BitsFlea extends Ownable implements Contract, IPlatform, IUser, IMa
             subCredit(uid, global.creditShipmentsTimeout);
         }
 
+        User user = users.get(uid);
+        user.lastActiveTime = Block.timestamp();
+
         emit(new ShipmentsEvent(orderId, number, pr.status, pr.shipTime));
     }
 
@@ -654,6 +683,9 @@ public class BitsFlea extends Ownable implements Contract, IPlatform, IUser, IMa
         Order order = orders.get(orderId);
         require(order.buyer.equals(uid), Error.ORDER_IS_NOT_YOURS);
         require(order.status == Order.OrderStatus.OS_PENDING_RECEIPT, Error.INVALID_ORDER_STATUS);
+
+        User user = users.get(uid);
+        user.lastActiveTime = Block.timestamp();
 
         completeOrder(order);
     }
@@ -686,6 +718,10 @@ public class BitsFlea extends Ownable implements Contract, IPlatform, IUser, IMa
         if (Block.timestamp() > pr.receiptTimeOut) {
             subCredit(order.seller, global.creditConfirmReceiptTimeout);
         }
+
+        User user = users.get(uid);
+        user.lastActiveTime = Block.timestamp();
+
         // 退款(合约中的邮费退给卖家，即两次邮费各承担一次)
         transfer(order.buyer, order.amount);
         transfer(order.seller, order.postage);
@@ -717,6 +753,9 @@ public class BitsFlea extends Ownable implements Contract, IPlatform, IUser, IMa
         pr.shipTimeOut = Block.timestamp() + global.shipTimeOut;
         returnList.put(orderId, pr);
 
+        User user = users.get(uid);
+        user.lastActiveTime = Block.timestamp();
+
         emit(new ReturnEvent(orderId, order.pid, uid));
     }
 
@@ -734,6 +773,9 @@ public class BitsFlea extends Ownable implements Contract, IPlatform, IUser, IMa
 
         order.delayedCount += 1;
         order.receiptTimeOut = Block.timestamp() + global.receiptTimeOut;
+
+        User user = users.get(uid);
+        user.lastActiveTime = Block.timestamp();
     }
 
     @Override
@@ -751,6 +793,9 @@ public class BitsFlea extends Ownable implements Contract, IPlatform, IUser, IMa
 
         pr.delayedCount += 1;
         pr.receiptTimeOut = Block.timestamp() + global.receiptTimeOut;
+
+        User user = users.get(uid);
+        user.lastActiveTime = Block.timestamp();
     }
 
     @Payable
@@ -804,6 +849,9 @@ public class BitsFlea extends Ownable implements Contract, IPlatform, IUser, IMa
             user.isReviewer = false;
         }
 
+        User opUser = users.get(uid);
+        opUser.lastActiveTime = Block.timestamp();
+
         bonusPoints(uid, global.voteAward);
 
         emit(new VoteReviewerEvent(uid, reviewer, rer.approveCount, rer.againstCount));
@@ -822,12 +870,13 @@ public class BitsFlea extends Ownable implements Contract, IPlatform, IUser, IMa
         require(product.status == Product.ProductStatus.PUBLISH, Error.PRODUCT_INVALID_STATUS);
         require(!product.uid.equals(uid), Error.REVIEWER_FOR_YOURSELF);
 
+        
         if (isDelist) {
             require(reasons != null && !reasons.isEmpty(), Error.REVIEWER_NO_REASON);
             product.status = Product.ProductStatus.DELISTED;
             subCredit(product.uid, global.creditInvalidPublish);
         } else {
-            User user = users.get(uid);
+            User user = users.get(product.uid);
             user.postsTotal += 1;
 
             product.status = Product.ProductStatus.NORMAL;
@@ -843,6 +892,9 @@ public class BitsFlea extends Ownable implements Contract, IPlatform, IUser, IMa
         pa.details = reasons;
         pa.reviewTime = Block.timestamp();
         productAudits.put(pid, pa);
+
+        User opUser = users.get(uid);
+        opUser.lastActiveTime = Block.timestamp();
 
         // 评审员工资
         salaryPoints(uid, global.reviewSalaryProduct);
@@ -932,6 +984,9 @@ public class BitsFlea extends Ownable implements Contract, IPlatform, IUser, IMa
         arb.createTime = Block.timestamp();
         arbits.put(arb.id, arb);
 
+        User user = users.get(plaintiff);
+        user.lastActiveTime = Block.timestamp();
+
         emit(new ApplyArbitEvent(arb.id));
     }
 
@@ -959,6 +1014,9 @@ public class BitsFlea extends Ownable implements Contract, IPlatform, IUser, IMa
             arb.status = Arbitration.ArbitStatus.AS_WAIT;
         }
 
+        User user = users.get(uid);
+        user.lastActiveTime = Block.timestamp();
+
         emit(new ArbitUpdateEvent(id, arb.status, uid));
     }
 
@@ -975,6 +1033,9 @@ public class BitsFlea extends Ownable implements Contract, IPlatform, IUser, IMa
             arb.proofContent = proofContent;
             emit(new ArbitUpdateEvent(id, arb.status, uid));
         }
+
+        User user = users.get(uid);
+        user.lastActiveTime = Block.timestamp();
     }
 
     @Override
@@ -998,6 +1059,9 @@ public class BitsFlea extends Ownable implements Contract, IPlatform, IUser, IMa
             arb.disagreeCount += 1;
         }
         arb.alreadyVoted.add(uid);
+
+        User user = users.get(uid);
+        user.lastActiveTime = Block.timestamp();
 
         // 计算投票结果
         if (arb.alreadyVoted.size() >= arb.reviewers.size() * 2 / 3 + 1) {
@@ -1117,6 +1181,9 @@ public class BitsFlea extends Ownable implements Contract, IPlatform, IUser, IMa
         } else {
             addCredit(order.buyer, global.creditPay);
         }
+
+        User user = users.get(order.buyer);
+        user.lastActiveTime = Block.timestamp();
 
         emit(new PayOrderEvent(orderId, order.status, order.payTime, order.shipTimeOut));
     }
