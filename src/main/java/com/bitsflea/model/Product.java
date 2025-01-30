@@ -117,7 +117,13 @@ public class Product {
      * 销售方式
      */
     public static class SaleMethod {
+        /**
+         * 一口价
+         */
         public static final short BUY_NOW = 0;
+        /**
+         * 拍卖
+         */
         public static final short AUCTION = 1;
 
         public static boolean isValid(short val) {

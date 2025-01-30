@@ -523,7 +523,11 @@ public class BitsFlea extends Ownable implements Contract, IPlatform, IUser, IMa
         BigInteger pid = Helper.getPidByOrderId(orderId);
         require(products.containsKey(pid), Error.PRODUCT_INVALID_ID);
         Product product = products.get(pid);
-        require(quantity > 0 && quantity <= product.stockCount, Error.PARAMETER_ERROR);
+        if (product.isRetail) {
+            require(quantity > 0 && quantity <= product.stockCount, Error.PARAMETER_ERROR);
+        } else {
+            require(quantity == product.stockCount, Error.PARAMETER_ERROR);
+        }
         require(product.status == Product.ProductStatus.NORMAL, Error.PRODUCT_INVALID_STATUS);
         require(!product.uid.equals(uid), Error.PRODUCT_CANT_BUY_YOUR_OWN);
 
@@ -870,7 +874,6 @@ public class BitsFlea extends Ownable implements Contract, IPlatform, IUser, IMa
         require(product.status == Product.ProductStatus.PUBLISH, Error.PRODUCT_INVALID_STATUS);
         require(!product.uid.equals(uid), Error.REVIEWER_FOR_YOURSELF);
 
-        
         if (isDelist) {
             require(reasons != null && !reasons.isEmpty(), Error.REVIEWER_NO_REASON);
             product.status = Product.ProductStatus.DELISTED;
