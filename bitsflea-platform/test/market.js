@@ -237,7 +237,7 @@ describe("Market", function () {
 
         let postage = parseNULS(10).toString();
         let price = parseNULS(100).toString();
-        await sdk.waitingResult(await bitsflea.connect(sdk.accountPri).publish(pid, 1, description, true, false, true, location, 0, 2, 1,
+        await sdk.waitingResult(await bitsflea.connect(sdk.accountPri).publish(pid, 1, description, true, true, true, location, 0, 2, 1,
             `${postage},0,0`, `${price},0,0`));
 
         await sdk.waitingResult(await bitsflea.connect(alice.accountPri).review(pid, false, "商品合格"));

@@ -390,7 +390,7 @@ public class CrossLockedToken extends Ownable implements Contract, Token, INRC13
                 new String[] { value.toString() },
                 new String[] { data } };
         String result = to.callWithReturnValue("onTransferReceived", null, args, BigInteger.ZERO);
-        if (result != "true") {
+        if (Boolean.parseBoolean(result) == false) {
             revert("NRC1363InvalidReceiver");
         }
         return true;
@@ -408,7 +408,7 @@ public class CrossLockedToken extends Ownable implements Contract, Token, INRC13
                 new String[] { value.toString() },
                 new String[] { data } };
         String result = to.callWithReturnValue("onTransferReceived", null, args, BigInteger.ZERO);
-        if (result != "true") {
+        if (Boolean.parseBoolean(result) == false) {
             revert("NRC1363InvalidReceiver");
         }
         return true;
@@ -425,7 +425,7 @@ public class CrossLockedToken extends Ownable implements Contract, Token, INRC13
                 new String[] { value.toString() },
                 new String[] { data } };
         String result = spender.callWithReturnValue("onApprovalReceived", null, args, BigInteger.ZERO);
-        if (result != "true") {
+        if (Boolean.parseBoolean(result) == false) {
             revert("NRC1363InvalidReceiver");
         }
         return true;
