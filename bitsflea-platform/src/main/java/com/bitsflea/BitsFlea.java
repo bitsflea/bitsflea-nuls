@@ -31,6 +31,7 @@ import com.bitsflea.events.UpdateUserEvent;
 import com.bitsflea.events.VoteReviewerEvent;
 import com.bitsflea.interfaces.IMarket;
 import com.bitsflea.interfaces.INRC1363Receiver;
+import com.bitsflea.interfaces.INRC1363Spender;
 import com.bitsflea.interfaces.IPlatform;
 import com.bitsflea.interfaces.IUser;
 import com.bitsflea.model.Global;
@@ -60,7 +61,8 @@ import io.nuls.contract.sdk.token.NRC20Wrapper;
 /**
  * 部署前必须先部署平台积分合约
  */
-public class BitsFlea extends Ownable implements Contract, IPlatform, IUser, IMarket, INRC1363Receiver {
+public class BitsFlea extends Ownable
+        implements Contract, IPlatform, IUser, IMarket, INRC1363Receiver, INRC1363Spender {
 
     /**
      * 平台积分小数位数
@@ -830,6 +832,14 @@ public class BitsFlea extends Ownable implements Contract, IPlatform, IUser, IMa
     }
 
     @Override
+    public boolean onApprovalReceived(Address owner, BigInteger value, String data) {
+        if (Msg.sender().equals(point.getNrc20Token())) {
+            return true;
+        }
+        return false;
+    }
+
+    @Override
     public void voteReviewer(Address reviewer, boolean isSupport) {
         Address uid = Msg.sender();
         require(!isLock(uid), Error.USER_LOCKED);
@@ -1486,5 +1496,4 @@ public class BitsFlea extends Ownable implements Contract, IPlatform, IUser, IMa
             global.refCommRate = refCommRate;
         }
     }
-
 }
