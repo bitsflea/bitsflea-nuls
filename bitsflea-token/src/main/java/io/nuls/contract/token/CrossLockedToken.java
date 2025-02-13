@@ -349,6 +349,7 @@ public class CrossLockedToken extends Ownable implements Contract, Token, INRC13
         require(value != null && value.compareTo(BigInteger.ZERO) >= 0);
     }
 
+    @SuppressWarnings("unused")
     private void check(BigInteger value1, BigInteger value2) {
         check(value1);
         check(value2);
