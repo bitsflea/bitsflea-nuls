@@ -20,9 +20,13 @@ public class Product {
      */
     public Address uid;
     /**
+     * 商品名称
+     */
+    public String name;
+    /**
      * 商品详细说明, 存储在IPFS的url
      * 格式如下:
-     * {name: "",images:[cid],description:""}
+     * {images:[cid],description:""}
      */
     public String description;
     /**

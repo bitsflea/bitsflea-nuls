@@ -18,7 +18,7 @@ describe('ChainAsset', function () {
 
     let commissionAddr = "tNULSeBaMg3uA6d68rchxgu6a1jrGw1GQwkBBJ";
 
-    const description = "bafkreiacxqnvmjorxcpxsh5zucj32s5bmn3b6lt6dpyn26tid6g3emjp5y";
+    const description = "bagaaieran3gqmu65wp4fjccrgidryjyfdxkubvm2fihe6u52qztirfxi56xq";
     const location = "34.0522,-118.2437|US,Los Angeles,California";
 
     before(async () => {
@@ -61,7 +61,7 @@ describe('ChainAsset', function () {
         let postage = parseNULS(0.1).toString();
         let price = parseNULS(1).toString();
 
-        let txHash = await bitsflea.connect(sdk.accountPri).publish(pid, 1, description, true, false, true, location, 0, 1, 1,
+        let txHash = await bitsflea.connect(sdk.accountPri).publish(pid, 1, pid, description, true, false, true, location, 0, 1, 1,
             `${postage},5,1`, `${price},5,1`);
         await sdk.waitingResult(txHash);
 

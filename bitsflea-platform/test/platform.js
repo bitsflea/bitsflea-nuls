@@ -15,7 +15,7 @@ describe("Platform", function () {
     let carol;  // reviewer
     let lilei;  // user
 
-    const description = "bafkreiacxqnvmjorxcpxsh5zucj32s5bmn3b6lt6dpyn26tid6g3emjp5y";
+    const description = "bagaaieran3gqmu65wp4fjccrgidryjyfdxkubvm2fihe6u52qztirfxi56xq";
     const location = "34.0522,-118.2437|US,Los Angeles,California";
 
     before(async function () {
@@ -40,7 +40,7 @@ describe("Platform", function () {
             let postage = parseNULS(10).toString();
             let price = parseNULS(100).toString();
 
-            let txHash = await bitsflea.connect(sdk.accountPri).publish(pid, 1, description, true, false, true, location, 0, 1, 1,
+            let txHash = await bitsflea.connect(sdk.accountPri).publish(pid, 1, pid, description, true, false, true, location, 0, 1, 1,
                 `${postage},0,0`, `${price},0,0`);
             await sdk.waitingResult(txHash);
         });
@@ -91,7 +91,7 @@ describe("Platform", function () {
             let postage = parseNULS(10).toString();
             let price = parseNULS(100).toString();
 
-            let txHash = await bitsflea.connect(lilei.accountPri).publish(pid, 1, description, true, false, true, location, 0, 1, 1,
+            let txHash = await bitsflea.connect(lilei.accountPri).publish(pid, 1, pid, description, true, false, true, location, 0, 1, 1,
                 `${postage},0,0`, `${price},0,0`);
             await sdk.waitingResult(txHash);
 
@@ -193,7 +193,7 @@ describe("Platform", function () {
             pid = await bitsflea.newProductId(lilei.sender);
             pid = pid.toString(10);
 
-            let txHash = await bitsflea.connect(lilei.accountPri).publish(pid, 1, description, true, false, true, location, 0, 1, 1,
+            let txHash = await bitsflea.connect(lilei.accountPri).publish(pid, 1, pid, description, true, false, true, location, 0, 1, 1,
                 `${postage},0,0`, `${price},0,0`);
             await sdk.waitingResult(txHash);
 

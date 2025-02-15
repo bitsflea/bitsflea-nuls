@@ -13,7 +13,7 @@ describe("Market", function () {
 
     let pid;
     let delistPid;
-    const description = "bafkreiacxqnvmjorxcpxsh5zucj32s5bmn3b6lt6dpyn26tid6g3emjp5y";
+    const description = "bagaaieran3gqmu65wp4fjccrgidryjyfdxkubvm2fihe6u52qztirfxi56xq";
     const location = "34.0522,-118.2437|US,Los Angeles,California";
 
     before(async function () {
@@ -45,7 +45,7 @@ describe("Market", function () {
         let price = parseNULS(100).toString();
         console.log(`postage: ${postage} price: ${price}`);
 
-        let txHash = await bitsflea.publish(pid, 1, description, true, false, true, location, 0, 1, 1,
+        let txHash = await bitsflea.publish(pid, 1, pid, description, true, false, true, location, 0, 1, 1,
             `${postage},0,0`, `${price},0,0`);
 
         let txResult = await sdk.waitingResult(txHash);
@@ -53,7 +53,7 @@ describe("Market", function () {
         assert.ok(pid == event.payload.pid, "pid error");
         assert.ok(sdk.sender == event.payload.uid, "uid error");
 
-        await bitsflea.publish(pid, 1, description, true, false, true, location, 0, 1, 1,
+        await bitsflea.publish(pid, 1, pid, description, true, false, true, location, 0, 1, 1,
             `${postage},0,0`, `${price},0,0`).catch(reason => {
                 assert.equal(reason, "20001", "20001 error");
             });
@@ -61,37 +61,37 @@ describe("Market", function () {
         pid = await bitsflea.newProductId(sdk.sender);
         pid = pid.toString(10);
 
-        await bitsflea.publish(pid, 2, description, true, false, true, location, 0, 1, 1,
+        await bitsflea.publish(pid, 2, pid, description, true, false, true, location, 0, 1, 1,
             `${postage},0,0`, `${price},0,0`).catch(reason => {
                 assert.equal(reason, "20025", "20025 error");
             });
 
-        await bitsflea.publish(pid, 1, description, true, false, true, location, 0, 0, 1,
+        await bitsflea.publish(pid, 1, pid, description, true, false, true, location, 0, 0, 1,
             `${postage},0,0`, `${price},0,0`).catch(reason => {
                 assert.equal(reason, "20002", "20002 error");
             });
 
-        await bitsflea.publish(pid, 1, description, true, false, true, location, 2, 1, 1,
+        await bitsflea.publish(pid, 1, pid, description, true, false, true, location, 2, 1, 1,
             `${postage},0,0`, `${price},0,0`).catch(reason => {
                 assert.equal(reason, "20004", "20004 error");
             });
 
-        await bitsflea.publish(pid, 1, description, true, false, true, location, 0, 1, 2,
+        await bitsflea.publish(pid, 1, pid, description, true, false, true, location, 0, 1, 2,
             `${postage},0,0`, `${price},0,0`).catch(reason => {
                 assert.equal(reason, "20005", "20005 error");
             });
 
-        await bitsflea.publish(pid, 1, description, true, false, true, location, 0, 1, 1,
+        await bitsflea.publish(pid, 1, pid, description, true, false, true, location, 0, 1, 1,
             `${postage},3,1`, `${price},3,1`).catch(reason => {
                 assert.equal(reason, "20022", "20022 error");
             });
 
-        await bitsflea.publish(pid, 1, description, true, false, true, location, 0, 1, 1,
+        await bitsflea.publish(pid, 1, pid, description, true, false, true, location, 0, 1, 1,
             `${postage},0,0`, `${price},3,1`).catch(reason => {
                 assert.equal(reason, "20018", "20018 error");
             });
 
-        await bitsflea.publish(pid, 1, description, true, false, true, location, 0, 1, 1,
+        await bitsflea.publish(pid, 1, pid, description, true, false, true, location, 0, 1, 1,
             `-1,0,0`, `${price},0,0`).catch(reason => {
                 assert.equal(reason, "20020", "20020 error");
             });
@@ -128,7 +128,7 @@ describe("Market", function () {
 
         let postage = parseNULS(10).toString();
         let price = parseNULS(100).toString();
-        await sdk.waitingResult(await bitsflea.publish(pid, 1, description, true, false, true, location, 0, 1, 1,
+        await sdk.waitingResult(await bitsflea.publish(pid, 1, pid, description, true, false, true, location, 0, 1, 1,
             `${postage},0,0`, `${price},0,0`));
 
         console.log("pid:", pid);
@@ -237,7 +237,7 @@ describe("Market", function () {
 
         let postage = parseNULS(10).toString();
         let price = parseNULS(100).toString();
-        await sdk.waitingResult(await bitsflea.connect(sdk.accountPri).publish(pid, 1, description, true, true, true, location, 0, 2, 1,
+        await sdk.waitingResult(await bitsflea.connect(sdk.accountPri).publish(pid, 1, pid, description, true, true, true, location, 0, 2, 1,
             `${postage},0,0`, `${price},0,0`));
 
         await sdk.waitingResult(await bitsflea.connect(alice.accountPri).review(pid, false, "商品合格"));

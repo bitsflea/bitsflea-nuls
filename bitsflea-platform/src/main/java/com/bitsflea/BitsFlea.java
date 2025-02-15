@@ -433,7 +433,7 @@ public class BitsFlea extends Ownable
     }
 
     @Override
-    public void publish(BigInteger pid, int category, String description, boolean isNew, boolean isRetail,
+    public void publish(BigInteger pid, int category, String name, String description, boolean isNew, boolean isRetail,
             boolean isReturns,
             String position, short saleMethod, int stockCount, short pickupMethod, String postage, String price) {
         Address uid = Msg.sender();
@@ -458,6 +458,7 @@ public class BitsFlea extends Ownable
         product.uid = uid;
         product.pid = pid;
         product.category = category;
+        product.name = name;
         product.description = description;
         product.isNew = isNew;
         product.isRetail = isRetail;

@@ -26,6 +26,7 @@ public interface IMarket {
      * 
      * @param pid          商品id
      * @param category     分类
+     * @param name         名称
      * @param description  描述json的url,一般存储于IPFS
      * @param isNew        是否为全新
      * @param isRetail     是否零售
@@ -39,6 +40,7 @@ public interface IMarket {
      */
     void publish(@Required BigInteger pid,
             @Required int category,
+            @Required String name,
             @Required String description,
             @Required boolean isNew,
             @Required boolean isRetail,
