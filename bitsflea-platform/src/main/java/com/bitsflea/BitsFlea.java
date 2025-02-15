@@ -707,6 +707,7 @@ public class BitsFlea extends Ownable
         Order order = orders.get(orderId);
         require(order.seller.equals(uid), Error.ORDER_IS_NOT_YOURS);
 
+        order.endTime = Block.timestamp();
         order.status = Order.OrderStatus.OS_CANCELLED;
         order.clearTime = Block.timestamp() + global.clearOrderTime;
 
@@ -732,6 +733,8 @@ public class BitsFlea extends Ownable
         // 退款(合约中的邮费退给卖家，即两次邮费各承担一次)
         transfer(order.buyer, order.amount);
         transfer(order.seller, order.postage);
+
+        emit(new CancelOrderEvent(orderId, pr.pid, order.buyer, user.lastActiveTime));
     }
 
     @Override
