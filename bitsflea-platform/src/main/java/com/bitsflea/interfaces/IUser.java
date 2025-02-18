@@ -1,5 +1,7 @@
 package com.bitsflea.interfaces;
 
+import java.util.List;
+
 import com.bitsflea.model.User;
 
 import io.nuls.contract.sdk.Address;
@@ -46,8 +48,16 @@ public interface IUser {
 
     /**
      * 更新手机号
+     * 
      * @param phoneHash
      * @param phoneEncrypt
      */
     void updatePhone(@Required String phoneHash, @Required String phoneEncrypt);
+
+    /**
+     * 根据用户地址获取用户
+     * @param ids
+     * @return
+     */
+    List<User> getUsersByIds(String[] ids);
 }

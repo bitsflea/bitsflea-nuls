@@ -1,6 +1,7 @@
 package com.bitsflea.interfaces;
 
 import java.math.BigInteger;
+import java.util.List;
 import java.util.Map;
 
 import com.bitsflea.model.Order;
@@ -194,7 +195,16 @@ public interface IMarket {
 
     /**
      * 获取所有分类
+     * 
      * @return
      */
     Map<Integer, Categories> getCategories();
+
+    /**
+     * 根据商品id获取商品信息
+     * 
+     * @param ids
+     * @return
+     */
+    List<Product> getProductsByIds(String[] ids);
 }

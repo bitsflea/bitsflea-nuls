@@ -1500,4 +1500,34 @@ public class BitsFlea extends Ownable
             global.refCommRate = refCommRate;
         }
     }
+
+    @View
+    @JSONSerializable
+    @Override
+    public List<User> getUsersByIds(String[] ids) {
+        List<User> list = new ArrayList<User>();
+        for (int i = 0; i < ids.length; i++) {
+            Address id = new Address(ids[i]);
+            User u = users.get(id);
+            if (u != null) {
+                list.add(u);
+            }
+        }
+        return list;
+    }
+
+    @View
+    @JSONSerializable
+    @Override
+    public List<Product> getProductsByIds(String[] ids) {
+        List<Product> list = new ArrayList<Product>();
+        for (int i = 0; i < ids.length; i++) {
+            BigInteger id = new BigInteger(ids[i]);
+            Product p = products.get(id);
+            if (p != null) {
+                list.add(p);
+            }
+        }
+        return list;
+    }
 }
