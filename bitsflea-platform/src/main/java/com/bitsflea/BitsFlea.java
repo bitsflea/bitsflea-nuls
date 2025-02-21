@@ -861,7 +861,7 @@ public class BitsFlea extends Ownable
         }
         rer.voted.put(uid, true);
         User user = users.get(reviewer);
-        if (rer.approveCount - rer.againstCount > 0) {
+        if (rer.approveCount - rer.againstCount > 0 && user.creditValue >= global.creditReviewerLimit) {
             user.isReviewer = true;
         } else {
             user.isReviewer = false;
