@@ -57,7 +57,6 @@ import io.nuls.contract.sdk.annotation.PayableMultyAsset;
 import io.nuls.contract.sdk.annotation.Required;
 import io.nuls.contract.sdk.annotation.View;
 import io.nuls.contract.sdk.token.NRC20Wrapper;
-import lombok.val;
 
 /**
  * 部署前必须先部署平台积分合约
