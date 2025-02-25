@@ -23,7 +23,7 @@ public class Global {
      */
     public Address commission;
     /**
-     * 是否开起完成交易奖励积分
+     * 是否开启完成交易奖励积分
      */
     public Boolean tradeReward = false;
 

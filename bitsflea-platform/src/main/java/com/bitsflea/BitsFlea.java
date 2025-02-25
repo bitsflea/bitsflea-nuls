@@ -57,6 +57,7 @@ import io.nuls.contract.sdk.annotation.PayableMultyAsset;
 import io.nuls.contract.sdk.annotation.Required;
 import io.nuls.contract.sdk.annotation.View;
 import io.nuls.contract.sdk.token.NRC20Wrapper;
+import lombok.val;
 
 /**
  * 部署前必须先部署平台积分合约
@@ -64,6 +65,7 @@ import io.nuls.contract.sdk.token.NRC20Wrapper;
 public class BitsFlea extends Ownable
         implements Contract, IPlatform, IUser, IMarket, INRC1363Receiver, INRC1363Spender {
 
+    private static final BigInteger E = BigInteger.valueOf(10);
     /**
      * 平台积分小数位数
      */
@@ -173,7 +175,7 @@ public class BitsFlea extends Ownable
      */
     @Override
     public void addCoin(Integer assetChainId, Integer assetId, short rate) {
-        require(rate >= 0 && rate <= DENOMINATOR.intValue(), Error.PARAMETER_ERROR);
+        require(rate >= 0, Error.PARAMETER_ERROR);
 
         onlyOwner();
 
@@ -1423,29 +1425,20 @@ public class BitsFlea extends Ownable
     private void tradeRewardPoints(Order order, User seller, User buyer) {
         if (!global.tradeReward)
             return;
-        int decimals;
-        if (order.amount.getAssetChainId() == 0) {
-            decimals = pointDecimals;
-        } else {
-            decimals = assetDecimals(order.amount.getAssetChainId(), order.amount.getAssetId());
-        }
+        int decimals = assetDecimals(order.amount.getAssetChainId(), order.amount.getAssetId());
         String key = Coin.getTokenKey(order.amount.getAssetChainId(), order.amount.getAssetId());
+        BigInteger amount = order.amount.getValue();
+        amount = amount.multiply(E.pow(4)).divide(E.pow(decimals)); // 只保留4位小数
         BigInteger rate = BigInteger.valueOf(coins.get(key).transactionAwardRate);
-        BigInteger val = order.amount.getValue();
-        val = val.multiply(rate).divide(DENOMINATOR); // 计算比率
-        if (decimals > pointDecimals) {
-            val = val.divide(BigInteger.valueOf(10).pow(decimals - pointDecimals));
-        } else if (pointDecimals > decimals) {
-            val = val.multiply(BigInteger.valueOf(10).pow(pointDecimals - decimals));
-        }
-        if (val.compareTo(BigInteger.valueOf(1)) > 0
-                && global.sysPool.compareTo(val.multiply(BigInteger.valueOf(2))) >= 0) {
-            global.sysPool = global.sysPool.subtract(val.multiply(BigInteger.valueOf(2)));
+        amount = amount.multiply(rate).divide(DENOMINATOR).multiply(E.pow(pointDecimals - 4)); // 计算比率
+        if (amount.compareTo(BigInteger.ZERO) > 0
+                && global.sysPool.compareTo(amount.multiply(BigInteger.valueOf(2))) >= 0) {
+            global.sysPool = global.sysPool.subtract(amount.multiply(BigInteger.valueOf(2)));
             // point.transfer(seller.uid, val);
             // point.transfer(buyer.uid, val);
             boolean result = Helper.batchTransfer(point.getNrc20Token(),
                     new Address[] { seller.uid, buyer.uid },
-                    new BigInteger[] { val, val });
+                    new BigInteger[] { amount, amount });
             require(result, Error.BATCHTRANSFER_FAILED);
         }
     }
@@ -1552,6 +1545,52 @@ public class BitsFlea extends Ownable
         }
         if (reviewSalaryDispute != null) {
             global.reviewSalaryDispute = reviewSalaryDispute;
+        }
+    }
+
+    @Override
+    public void setCreditScore(String key, int value) {
+        onlyOwner();
+        require(value >= 0, Error.PARAMETER_ERROR);
+        switch (key) {
+            case "creditBaseScore":
+                global.creditBaseScore = value;
+                break;
+            case "creditMax":
+                global.creditMax = value;
+                break;
+            case "creditRefLimit":
+                global.creditRefLimit = value;
+                break;
+            case "creditReviewerLimit":
+                global.creditReviewerLimit = value;
+                break;
+            case "creditCompleteTransaction":
+                global.creditCompleteTransaction = value;
+                break;
+            case "creditConfirmReceiptTimeout":
+                global.creditConfirmReceiptTimeout = value;
+                break;
+            case "creditShipmentsTimeout":
+                global.creditShipmentsTimeout = value;
+                break;
+            case "creditPayTimeOut":
+                global.creditPayTimeOut = value;
+                break;
+            case "creditPay":
+                global.creditPay = value;
+                break;
+            case "creditPublish":
+                global.creditPublish = value;
+                break;
+            case "creditInvalidPublish":
+                global.creditInvalidPublish = value;
+                break;
+            case "arbitLosing":
+                global.arbitLosing = value;
+                break;
+            default:
+                break;
         }
     }
 

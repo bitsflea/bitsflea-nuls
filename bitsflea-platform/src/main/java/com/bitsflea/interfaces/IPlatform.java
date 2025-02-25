@@ -221,4 +221,11 @@ public interface IPlatform {
      * @param reviewSalaryDispute 处理纠纷奖励
      */
     void setSalary(BigInteger reviewSalaryProduct, BigInteger reviewSalaryDispute);
+
+    /**
+     * 设置信用分相关数值
+     * @param key 
+     * @param value
+     */
+    void setCreditScore(String key, int value);
 }
