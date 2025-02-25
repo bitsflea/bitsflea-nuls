@@ -22,6 +22,10 @@ public class Global {
      * 佣金存放地址
      */
     public Address commission;
+    /**
+     * 是否开起完成交易奖励积分
+     */
+    public Boolean tradeReward = false;
 
     /*************************** 积分相关 ***************************/
     /**
@@ -58,6 +62,10 @@ public class Global {
      * 基础信用分
      */
     public int creditBaseScore = 500;
+    /**
+     * 信用分上限
+     */
+    public int creditMax = 1000;
     /**
      * 参与引荐的信用分下限
      */

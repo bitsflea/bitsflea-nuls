@@ -76,24 +76,28 @@ public interface IPlatform {
 
     /**
      * 存入积分到工资池
+     * 
      * @param amount
      */
     void depositSalaryPool(BigInteger amount);
 
     /**
      * 存入积分到引荐奖励池
+     * 
      * @param amount
      */
     void depositRefPool(BigInteger amount);
 
     /**
      * 存入积分到系统奖励池
+     * 
      * @param amount
      */
     void depositSysPool(BigInteger amount);
 
     /**
      * 获取指定id的商品审核记录
+     * 
      * @param id
      * @return
      */
@@ -101,6 +105,7 @@ public interface IPlatform {
 
     /**
      * 获取指定id的评审员
+     * 
      * @param uid
      * @return
      */
@@ -108,24 +113,28 @@ public interface IPlatform {
 
     /**
      * 获取全局配置信息
+     * 
      * @return
      */
     Global getGlobal();
 
     /**
      * 获取支持的token信息
+     * 
      * @return
      */
     Map<String, Coin> getCoins();
 
     /**
      * 获取平台收入的token信息
+     * 
      * @return
      */
     Map<String, MultyAssetValue> getIncomeTokens();
 
     /**
      * 获取指定id的仲裁记录
+     * 
      * @param id
      * @return
      */
@@ -133,12 +142,14 @@ public interface IPlatform {
 
     /**
      * 获取所有仲裁记录
+     * 
      * @return
      */
     Map<BigInteger, Arbitration> getArbits();
 
     /**
      * 检查电话是否注册
+     * 
      * @param phoneHash
      * @return
      */
@@ -165,6 +176,7 @@ public interface IPlatform {
 
     /**
      * 获取平台积分地址
+     * 
      * @return
      */
     Address getPoint();
@@ -172,14 +184,41 @@ public interface IPlatform {
     /**
      * 设置最大评审员数量
      * 只有合约所有者能操作
+     * 
      * @param count
      */
     void setReviewMaxCount(Integer count);
 
     /**
      * 设置平台佣金比例与引荐佣金比例
-     * @param feeRate 平台佣金比例
+     * 
+     * @param feeRate     平台佣金比例
      * @param refCommRate 引荐佣金比例
      */
-    void setRate(Short feeRate,Short refCommRate);
+    void setRate(Short feeRate, Short refCommRate);
+
+    /**
+     * 设置是否开始交易奖励
+     * 
+     * @param open true表示开启,默认关闭
+     */
+    void setTradeReward(Boolean open);
+
+    /**
+     * 设置奖励数值
+     * 
+     * @param refAward     引荐奖励
+     * @param publishAward 发布商品奖励
+     * @param voteAward    投票奖励
+     * @param clearAward   清理数据奖励
+     */
+    void setAwards(BigInteger refAward, BigInteger publishAward, BigInteger voteAward, BigInteger clearAward);
+
+    /**
+     * 设置评审奖励数值
+     * 
+     * @param reviewSalaryProduct 审核商品奖励
+     * @param reviewSalaryDispute 处理纠纷奖励
+     */
+    void setSalary(BigInteger reviewSalaryProduct, BigInteger reviewSalaryDispute);
 }

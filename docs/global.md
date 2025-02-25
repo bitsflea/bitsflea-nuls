@@ -6,6 +6,7 @@
 - 4.发布商品奖励“publishAward=50”，50BTF，由系统奖励池决定。
 - 5.投票奖励“voteAward=10”，10BTF，由系统奖励池决定。
 - 6.清理数据“clearAward=10”，10BTF，由系统奖励池决定。
+- 7.完成交易奖励"transactionAwardRate"，由交易币种transactionAwardRate参数决定
 
 ## 二、信用分
 - 1.基础信用分“creditBaseScore=500”

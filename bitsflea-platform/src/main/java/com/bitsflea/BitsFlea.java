@@ -123,6 +123,11 @@ public class BitsFlea extends Ownable
     private Map<Integer, Categories> categories;
 
     /**
+     * 是否完成引荐奖励
+     */
+    private Map<Address, Boolean> hasRefer;
+
+    /**
      * 用于计算比例的分母
      */
     private static final BigInteger DENOMINATOR = BigInteger.valueOf(1000);
@@ -150,6 +155,8 @@ public class BitsFlea extends Ownable
 
         incomeTokens = new HashMap<String, MultyAssetValue>();
         categories = new HashMap<Integer, Categories>();
+
+        hasRefer = new HashMap<Address, Boolean>();
 
         require(pointAddr != null);
         point = new NRC20Wrapper(pointAddr);
@@ -356,7 +363,7 @@ public class BitsFlea extends Ownable
                 User refer = users.get(referrer);
                 if (!isLock(refer) && refer.creditValue >= global.creditRefLimit) {
                     user.referrer = referrer;
-                    referPoints(referrer, global.refAward);
+                    // referPoints(referrer, global.refAward);
                 }
             }
         }
@@ -1223,11 +1230,19 @@ public class BitsFlea extends Ownable
 
         User seller = users.get(order.seller);
         User buyer = users.get(order.buyer);
-        if (seller != null && seller.uid.equals(order.seller)) {
+        if (seller != null) {
             seller.sellTotal += 1;
         }
-        if (buyer != null && buyer.uid.equals(order.buyer)) {
+        if (buyer != null) {
             buyer.buyTotal += 1;
+            // 处理买家引荐奖励
+            if (buyer.referrer != null) {
+                Boolean has = hasRefer.get(buyer.uid);
+                if (has == null || has == false) {
+                    hasRefer.put(buyer.uid, true);
+                    referPoints(buyer.referrer, global.refAward);
+                }
+            }
         }
 
         // 处理信用分
@@ -1387,6 +1402,9 @@ public class BitsFlea extends Ownable
      */
     private void addCredit(User user, int value) {
         user.creditValue += value < 0 ? -value : value;
+        if (user.creditValue > global.creditMax) {
+            user.creditValue = global.creditMax;
+        }
         emit(new UpdateUserEvent(user.uid));
     }
 
@@ -1403,6 +1421,8 @@ public class BitsFlea extends Ownable
      * @param buyer  买家对象
      */
     private void tradeRewardPoints(Order order, User seller, User buyer) {
+        if (!global.tradeReward)
+            return;
         int decimals;
         if (order.amount.getAssetChainId() == 0) {
             decimals = pointDecimals;
@@ -1498,6 +1518,40 @@ public class BitsFlea extends Ownable
         }
         if (refCommRate != null) {
             global.refCommRate = refCommRate;
+        }
+    }
+
+    @Override
+    public void setTradeReward(Boolean open) {
+        onlyOwner();
+        global.tradeReward = open;
+    }
+
+    @Override
+    public void setAwards(BigInteger refAward, BigInteger publishAward, BigInteger voteAward, BigInteger clearAward) {
+        onlyOwner();
+        if (refAward != null) {
+            global.refAward = refAward;
+        }
+        if (publishAward != null) {
+            global.publishAward = publishAward;
+        }
+        if (voteAward != null) {
+            global.voteAward = voteAward;
+        }
+        if (clearAward != null) {
+            global.clearAward = clearAward;
+        }
+    }
+
+    @Override
+    public void setSalary(BigInteger reviewSalaryProduct, BigInteger reviewSalaryDispute) {
+        onlyOwner();
+        if (reviewSalaryProduct != null) {
+            global.reviewSalaryProduct = reviewSalaryProduct;
+        }
+        if (reviewSalaryDispute != null) {
+            global.reviewSalaryDispute = reviewSalaryDispute;
         }
     }
 

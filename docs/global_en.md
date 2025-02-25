@@ -6,6 +6,7 @@
 4. **Publish Product Reward** `publishAward=50` – 50 BTF, determined by the system reward pool.
 5. **Voting Reward** `voteAward=10` – 10 BTF, determined by the system reward pool.
 6. **Data Cleanup Reward** `clearAward=10` – 10 BTF, determined by the system reward pool.
+7. **The transaction reward "transactionAwardRate"**, is determined by the transaction currency transactionAwardRate parameter
 
 ## II. Credit Score
 1. **Base Credit Score** `creditBaseScore=500`
