@@ -46,4 +46,9 @@ public class CreateOrderEvent implements Event {
      * 支付超时时间
      */
     private long payTimeOut;
+
+    /**
+     * 收货信息cid
+     */
+    private String receiptInfo;
 }

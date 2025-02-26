@@ -566,7 +566,7 @@ public class BitsFlea extends Ownable
         user.lastActiveTime = Block.timestamp();
 
         emit(new CreateOrderEvent(orderId, pid, order.seller, order.buyer, order.amount, order.postage,
-                order.createTime, order.payTimeOut));
+                order.createTime, order.payTimeOut, receiptInfo));
     }
 
     @Override
