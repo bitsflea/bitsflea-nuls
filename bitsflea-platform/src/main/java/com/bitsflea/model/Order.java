@@ -85,6 +85,11 @@ public class Order {
     public long clearTime = 0;
 
     /**
+     * 收货信息(cid)
+     */
+    public String receiptInfo;
+
+    /**
      * 订单状态
      */
     public static class OrderStatus {

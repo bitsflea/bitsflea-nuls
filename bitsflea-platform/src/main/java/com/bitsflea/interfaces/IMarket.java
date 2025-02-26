@@ -64,10 +64,11 @@ public interface IMarket {
      * 买家下订单, 普通订单, 即一个商品只卖一次(不考虑库存)
      * 合约会验证订单id中的商品id与下单人hashCode
      * 
-     * @param orderId  订单id
-     * @param quantity 购买数量
+     * @param orderId     订单id
+     * @param quantity    购买数量
+     * @param receiptInfo 收货信息
      */
-    void placeOrder(@Required BigInteger orderId, int quantity);
+    void placeOrder(@Required BigInteger orderId, int quantity, String receiptInfo);
 
     /**
      * 取消订单

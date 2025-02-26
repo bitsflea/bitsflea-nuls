@@ -205,7 +205,7 @@ describe("Platform", function () {
             // owner buy product
             orderId = await bitsflea.newOrderId(sdk.sender, pid);
             orderId = orderId.toString(10);
-            await sdk.waitingResult(await bitsflea.connect(sdk.accountPri).placeOrder(orderId, 1));
+            await sdk.waitingResult(await bitsflea.connect(sdk.accountPri).placeOrder(orderId, 1, null));
             // owner pay order
             let pointAddress = await bitsflea.getPoint();
             let point = await sdk.contract(pointAddress);
@@ -261,7 +261,7 @@ describe("Platform", function () {
             // owner buy product
             orderId = await bitsflea.newOrderId(sdk.sender, pid);
             orderId = orderId.toString(10);
-            await sdk.waitingResult(await bitsflea.connect(sdk.accountPri).placeOrder(orderId, 1));
+            await sdk.waitingResult(await bitsflea.connect(sdk.accountPri).placeOrder(orderId, 1, null));
             // owner pay order
             let pointAddress = await bitsflea.getPoint();
             let point = await sdk.contract(pointAddress);

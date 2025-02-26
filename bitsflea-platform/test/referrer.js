@@ -71,7 +71,7 @@ describe('Referrer', function () {
         // HanMeimei buy product
         let orderId = await bitsflea.newOrderId(HanMeimei.sender, pid);
         orderId = orderId.toString(10);
-        await sdk.waitingResult(await bitsflea.connect(HanMeimei.accountPri).placeOrder(orderId, 1));
+        await sdk.waitingResult(await bitsflea.connect(HanMeimei.accountPri).placeOrder(orderId, 1, null));
         // HanMeimei pay order
         let pointAddress = await bitsflea.getPoint();
         let point = await sdk.contract(pointAddress);

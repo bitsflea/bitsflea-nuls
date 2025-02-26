@@ -526,7 +526,7 @@ public class BitsFlea extends Ownable
     }
 
     @Override
-    public void placeOrder(BigInteger orderId, int quantity) {
+    public void placeOrder(BigInteger orderId, int quantity, String receiptInfo) {
         Address uid = Msg.sender();
         require(!isLock(uid), Error.USER_LOCKED);
         Helper.checkOrderId(orderId, uid);
@@ -554,6 +554,7 @@ public class BitsFlea extends Ownable
         order.status = Order.OrderStatus.OS_PENDING_PAYMENT;
         order.createTime = Block.timestamp();
         order.payTimeOut = Block.timestamp() + global.payTimeOut;
+        order.receiptInfo = receiptInfo;
         orders.put(orderId, order);
 
         product.stockCount -= quantity;

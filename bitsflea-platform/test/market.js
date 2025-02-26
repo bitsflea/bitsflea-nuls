@@ -137,26 +137,26 @@ describe("Market", function () {
         let orderId = await bitsflea.newOrderId(bob.sender, delistPid);
         orderId = orderId.toString(10);
         console.log("orderId:", orderId);
-        await bitsflea.connect(bob.accountPri).placeOrder(orderId, 1).catch(reason => {
+        await bitsflea.connect(bob.accountPri).placeOrder(orderId, 1, null).catch(reason => {
             assert.equal(reason, "20007", "20007 error");
         });
 
         orderId = await bitsflea.newOrderId(sdk.sender, pid);
         orderId = orderId.toString(10);
         console.log("orderId:", orderId);
-        await bitsflea.connect(sdk.accountPri).placeOrder(orderId, 1).catch(reason => {
+        await bitsflea.connect(sdk.accountPri).placeOrder(orderId, 1, null).catch(reason => {
             assert.equal(reason, "20010", "20010 error");
         });
 
         orderId = await bitsflea.newOrderId(bob.sender, pid);
         orderId = orderId.toString(10);
         console.log("orderId:", orderId);
-        await bitsflea.connect(bob.accountPri).placeOrder(`1${orderId}`, 1).catch(reason => {
+        await bitsflea.connect(bob.accountPri).placeOrder(`1${orderId}`, 1, null).catch(reason => {
             assert.equal(reason, "20009", "20009 error");
         });
 
         // Success placed an order
-        let txHash = await bitsflea.connect(bob.accountPri).placeOrder(orderId, 1);
+        let txHash = await bitsflea.connect(bob.accountPri).placeOrder(orderId, 1, null);
         await sdk.waitingResult(txHash);
 
         let [product, order] = await Promise.all([
@@ -246,7 +246,7 @@ describe("Market", function () {
         orderId = orderId.toString(10);
         console.log("orderId:", orderId);
 
-        let txHash = await bitsflea.connect(bob.accountPri).placeOrder(orderId, 1);
+        let txHash = await bitsflea.connect(bob.accountPri).placeOrder(orderId, 1, null);
         await sdk.waitingResult(txHash);
 
         let [product, order] = await Promise.all([
@@ -265,7 +265,7 @@ describe("Market", function () {
         orderId = orderId.toString(10);
         console.log("orderId:", orderId);
 
-        txHash = await bitsflea.connect(bob.accountPri).placeOrder(orderId, 1);
+        txHash = await bitsflea.connect(bob.accountPri).placeOrder(orderId, 1, null);
         await sdk.waitingResult(txHash);
 
         [product, order] = await Promise.all([
