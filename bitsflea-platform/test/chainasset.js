@@ -14,12 +14,13 @@ describe('ChainAsset', function () {
     let bob;
     let HanMeimei;
 
-    let transactionAwardRate = 100;
+    let transactionAwardRate = 5;
 
     let commissionAddr = "tNULSeBaMg3uA6d68rchxgu6a1jrGw1GQwkBBJ";
 
     const description = "bagaaieran3gqmu65wp4fjccrgidryjyfdxkubvm2fihe6u52qztirfxi56xq";
     const location = "34.0522,-118.2437|US,Los Angeles,California";
+    const DENOMINATOR = 10000
 
     before(async () => {
         bitsflea = await sdk.contract(contract);
@@ -32,7 +33,7 @@ describe('ChainAsset', function () {
     });
 
     it("Failed to add chain assets", async () => {
-        await bitsflea.connect(alice.accountPri).addCoin(5, 1, 100).catch(reason => {
+        await bitsflea.connect(alice.accountPri).addCoin(5, 1, transactionAwardRate).catch(reason => {
             assert.equal(reason, "20021", "20021 error");
         });
     });
@@ -110,7 +111,7 @@ describe('ChainAsset', function () {
         assert.equal(u2.creditValue + 5, u22.creditValue, "HanMeimei creditValue error");
 
         // trading point reward
-        let pointReward = parseNULS(1).times(transactionAwardRate).div(1000);
+        let pointReward = parseNULS(1).times(transactionAwardRate).div(DENOMINATOR);
         if (g.tradeReward === "true") {
             assert.equal(b32.minus(b3).toString(10), pointReward.toString(), "owner point balance error");
             assert.equal(b42.minus(b4).toString(10), pointReward.toString(), "HanMeimei point balance error");
@@ -121,8 +122,8 @@ describe('ChainAsset', function () {
 
 
         let total = parseNULS(1.1);
-        let income = total.times(50).div(1000);
-        let reward = income.times(50).div(1000);
+        let income = total.times(500).div(DENOMINATOR);
+        let reward = income.times(500).div(DENOMINATOR);
         // referrer Trading Commission
         assert.equal(b12.minus(b1).toString(10), reward.toString(10), "ref reward error");
 

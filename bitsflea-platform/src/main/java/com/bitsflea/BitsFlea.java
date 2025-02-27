@@ -131,7 +131,7 @@ public class BitsFlea extends Ownable
     /**
      * 用于计算比例的分母
      */
-    private static final BigInteger DENOMINATOR = BigInteger.valueOf(1000);
+    private static final BigInteger DENOMINATOR = BigInteger.valueOf(10000);
     /**
      * 定义链id
      * 部署前必须修改此设置
@@ -152,7 +152,7 @@ public class BitsFlea extends Ownable
         arbits = new HashMap<BigInteger, Arbitration>();
 
         coins = new HashMap<String, Coin>();
-        coins.put("0-0", new Coin(0, 0, (short) 50));
+        coins.put("0-0", new Coin(0, 0, 250));
 
         incomeTokens = new HashMap<String, MultyAssetValue>();
         categories = new HashMap<Integer, Categories>();
@@ -173,7 +173,7 @@ public class BitsFlea extends Ownable
      * @param rate
      */
     @Override
-    public void addCoin(Integer assetChainId, Integer assetId, short rate) {
+    public void addCoin(Integer assetChainId, Integer assetId, int rate) {
         require(rate >= 0, Error.PARAMETER_ERROR);
 
         onlyOwner();

@@ -161,9 +161,9 @@ public interface IPlatform {
      * 
      * @param assetChainId
      * @param assetId
-     * @param rate         制成比例
+     * @param rate         设置比例
      */
-    void addCoin(Integer assetChainId, Integer assetId, short rate);
+    void addCoin(Integer assetChainId, Integer assetId, int rate);
 
     /**
      * 生成一个新的仲裁id

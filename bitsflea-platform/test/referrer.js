@@ -16,6 +16,7 @@ describe('Referrer', function () {
 
     const description = "bagaaieran3gqmu65wp4fjccrgidryjyfdxkubvm2fihe6u52qztirfxi56xq";
     const location = "34.0522,-118.2437|US,Los Angeles,California";
+    const DENOMINATOR = 10000
 
     before(async () => {
         bitsflea = await sdk.contract(contract);
@@ -99,8 +100,8 @@ describe('Referrer', function () {
         assert.equal(u2.creditValue + 5, u22.creditValue, "HanMeimei creditValue error");
 
         let total = parseNULS(110);
-        let income = total.times(50).div(1000);
-        let reward = income.times(50).div(1000); // 交易佣金+引荐奖励
+        let income = total.times(500).div(DENOMINATOR);
+        let reward = income.times(500).div(DENOMINATOR); // 交易佣金+引荐奖励
         if (!hasRefer) {
             reward = reward.plus(parseNULS(100))
         }

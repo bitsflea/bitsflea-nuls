@@ -16,9 +16,9 @@ import lombok.AllArgsConstructor;
      */
     public int assetId;
     /**
-     * 完成交易的奖励率，100%=1000
+     * 完成交易的奖励率，100%=10000
      */
-    public short transactionAwardRate;
+    public int transactionAwardRate;
 
     public static String getTokenKey(Integer chainId, Integer assetId) {
         return chainId.toString() + "-" + assetId.toString();

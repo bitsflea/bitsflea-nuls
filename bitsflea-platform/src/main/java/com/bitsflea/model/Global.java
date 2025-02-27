@@ -10,14 +10,14 @@ public class Global {
      */
     public int totalUsers;
     /**
-     * 交易佣金费率(平台收取),100%=1000
+     * 交易佣金费率(平台收取),100%=10000
      */
-    public short feeRate = 50;
+    public short feeRate = 500;
     /**
-     * 引荐佣金率,100%=1000
+     * 引荐佣金率,100%=10000
      * 引荐佣金从平台抽佣中支出
      */
-    public short refCommRate = 50;
+    public short refCommRate = 500;
     /**
      * 佣金存放地址
      */

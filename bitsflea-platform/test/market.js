@@ -23,7 +23,7 @@ describe("Market", function () {
     });
 
     it("Add category", async () => {
-        let txHash = await bitsflea.addCategory(1, "数码", 0).catch(reason => {
+        let txHash = await bitsflea.addCategory(1, "Electronics", 0).catch(reason => {
             if (reason !== "20024") {
                 throw reason;
             }

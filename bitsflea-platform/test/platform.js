@@ -17,6 +17,7 @@ describe("Platform", function () {
 
     const description = "bagaaieran3gqmu65wp4fjccrgidryjyfdxkubvm2fihe6u52qztirfxi56xq";
     const location = "34.0522,-118.2437|US,Los Angeles,California";
+    const DENOMINATOR = 10000;
 
     before(async function () {
         bitsflea = await sdk.contract(contract);
@@ -29,7 +30,6 @@ describe("Platform", function () {
         point = await sdk.contract(pointAddress);
     });
 
-    /*
     describe("Review product", () => {
 
         let pid;
@@ -181,7 +181,6 @@ describe("Platform", function () {
             assert.equal(p.status, 300, "product status error");
         });
     });
-    */
 
     describe("Arbitration Order", async () => {
         let pid;
@@ -203,7 +202,6 @@ describe("Platform", function () {
             await sdk.waitingResult(await bitsflea.connect(alice.accountPri).review(pid, false, "合格"));
         });
 
-        /*
         it("buyer winner arbit", async () => {
             // owner buy product
             orderId = await bitsflea.newOrderId(sdk.sender, pid);
@@ -259,7 +257,6 @@ describe("Platform", function () {
             assert.equal(buyerB2.minus(buyerB).toString(10), price, "buyer balance error");
             assert.equal(sellerB2.minus(sellerB).toString(10), postage, "seller balance error");
         });
-        */
 
         it("seller winner arbit", async () => {
             // owner buy product
@@ -298,9 +295,9 @@ describe("Platform", function () {
                 bitsflea.getGlobal()
             ]);
             let total = parseNULS(110);
-            let income = total.minus(total.times(50).div(1000));
+            let income = total.minus(total.times(500).div(DENOMINATOR));
             if (g.tradeReward === "true") {
-                let reward = parseNULS(100).times(50).div(1000);
+                let reward = parseNULS(100).times(500).div(DENOMINATOR);
                 income = income.plus(reward);
             }
             assert.equal(order.status, 600, "order status error");
