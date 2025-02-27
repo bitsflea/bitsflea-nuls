@@ -224,8 +224,17 @@ public interface IPlatform {
 
     /**
      * 设置信用分相关数值
-     * @param key 
+     * 
+     * @param key
      * @param value
      */
     void setCreditScore(String key, int value);
+
+    /**
+     * 检查目标uid的引荐人是否已经获得过目标人的引荐奖励
+     * 
+     * @param uid
+     * @return
+     */
+    Boolean getHasRefer(Address uid);
 }

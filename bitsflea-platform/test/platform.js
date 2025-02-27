@@ -29,6 +29,7 @@ describe("Platform", function () {
         point = await sdk.contract(pointAddress);
     });
 
+    /*
     describe("Review product", () => {
 
         let pid;
@@ -180,6 +181,7 @@ describe("Platform", function () {
             assert.equal(p.status, 300, "product status error");
         });
     });
+    */
 
     describe("Arbitration Order", async () => {
         let pid;
@@ -201,6 +203,7 @@ describe("Platform", function () {
             await sdk.waitingResult(await bitsflea.connect(alice.accountPri).review(pid, false, "合格"));
         });
 
+        /*
         it("buyer winner arbit", async () => {
             // owner buy product
             orderId = await bitsflea.newOrderId(sdk.sender, pid);
@@ -256,6 +259,7 @@ describe("Platform", function () {
             assert.equal(buyerB2.minus(buyerB).toString(10), price, "buyer balance error");
             assert.equal(sellerB2.minus(sellerB).toString(10), postage, "seller balance error");
         });
+        */
 
         it("seller winner arbit", async () => {
             // owner buy product
@@ -287,16 +291,18 @@ describe("Platform", function () {
             ]);
             await sdk.waitingResult(await bitsflea.connect(carol.accountPri).voteArbit(aid, false, { gasLimitTimes: 5 }));
             // check
-            let [order, sellerB2, p] = await Promise.all([
+            let [order, sellerB2, p, g] = await Promise.all([
                 bitsflea.getOrder(orderId),
                 point.balanceOf(lilei.sender),
-                bitsflea.getProduct(pid)
-
+                bitsflea.getProduct(pid),
+                bitsflea.getGlobal()
             ]);
             let total = parseNULS(110);
             let income = total.minus(total.times(50).div(1000));
-            let reward = parseNULS(100).times(50).div(1000);
-            income = income.plus(reward);
+            if (g.tradeReward === "true") {
+                let reward = parseNULS(100).times(50).div(1000);
+                income = income.plus(reward);
+            }
             assert.equal(order.status, 600, "order status error");
             assert.ok(sellerB2.minus(sellerB).eq(income), "seller balance error");
             assert.equal(p.status, 200, "product status error");

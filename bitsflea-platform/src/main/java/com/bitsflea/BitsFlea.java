@@ -541,6 +541,7 @@ public class BitsFlea extends Ownable
         }
         require(product.status == Product.ProductStatus.NORMAL, Error.PRODUCT_INVALID_STATUS);
         require(!product.uid.equals(uid), Error.PRODUCT_CANT_BUY_YOUR_OWN);
+        require(!isLock(product.uid), Error.USER_LOCKED);
 
         Order order = new Order();
         order.oid = orderId;
@@ -1425,7 +1426,9 @@ public class BitsFlea extends Ownable
     private void tradeRewardPoints(Order order, User seller, User buyer) {
         if (!global.tradeReward)
             return;
-        int decimals = assetDecimals(order.amount.getAssetChainId(), order.amount.getAssetId());
+        int decimals = pointDecimals;
+        if (order.amount.getAssetChainId() != 0)
+            decimals = assetDecimals(order.amount.getAssetChainId(), order.amount.getAssetId());
         String key = Coin.getTokenKey(order.amount.getAssetChainId(), order.amount.getAssetId());
         BigInteger amount = order.amount.getValue();
         amount = amount.multiply(E.pow(4)).divide(E.pow(decimals)); // 只保留4位小数
@@ -1622,5 +1625,12 @@ public class BitsFlea extends Ownable
             }
         }
         return list;
+    }
+
+    @View
+    public Boolean getHasRefer(Address uid) {
+        if (hasRefer.containsKey(uid))
+            return hasRefer.get(uid);
+        return false;
     }
 }

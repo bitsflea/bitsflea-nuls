@@ -27,7 +27,7 @@ describe('Referrer', function () {
         point = await sdk.contract(pointAddress);
     });
 
-    it("Referral Rewards", async () => {
+    it("Referral", async () => {
         let result = await bitsflea.getGlobal();
         assert.ok(!!result, "Failed to get global status");
 
@@ -50,11 +50,11 @@ describe('Referrer', function () {
             result = await bitsflea.connect(HanMeimei.accountPri).regUser(nickname, phoneHash, phoneEncrypt, referrer, head, extendInfo);
             await sdk.waitingResult(result);
             let balance2 = await point.balanceOf(alice.sender);
-            assert.equal(balance2.minus(balance1).toString(10), parseNULS(100).toString(10), "alice balance error");
+            assert.equal(balance2.minus(balance1).toString(10), "0", "alice balance error");
         }
     });
 
-    it("Trading Commission", async () => {
+    it("Trading commission and referral reward", async () => {
         let pid = await bitsflea.newProductId(sdk.sender);
         pid = pid.toString(10);
 
@@ -78,13 +78,14 @@ describe('Referrer', function () {
         await sdk.waitingResult(await point.connect(HanMeimei.accountPri).transferAndCall(bitsflea.address, parseNULS(110).toString(10), orderId));
         // owner shipment
         await sdk.waitingResult(await bitsflea.connect(sdk.accountPri).shipments(orderId, "123456789"));
-        let [u1, u2, b1, incomeTokens] = await Promise.all([
+        let [u1, u2, b1, incomeTokens, hasRefer] = await Promise.all([
             bitsflea.getUser(sdk.sender),
             bitsflea.getUser(HanMeimei.sender),
             point.balanceOf(alice.sender),
-            bitsflea.getIncomeTokens()
+            bitsflea.getIncomeTokens(),
+            bitsflea.getHasRefer(HanMeimei.sender)
         ]);
-        // console.log("incomeTokens:", incomeTokens);
+        console.log("incomeTokens:", incomeTokens);
         // HanMeimei confirm receipt
         await sdk.waitingResult(await bitsflea.connect(HanMeimei.accountPri).confirmReceipt(orderId));
         let [u12, u22, b12, incomeTokens2] = await Promise.all([
@@ -93,17 +94,22 @@ describe('Referrer', function () {
             point.balanceOf(alice.sender),
             bitsflea.getIncomeTokens()
         ]);
-        // console.log("incomeTokens2:", incomeTokens2);
+        console.log("incomeTokens2:", incomeTokens2, hasRefer);
         assert.equal(u1.creditValue + 5, u12.creditValue, "owner creditValue error");
         assert.equal(u2.creditValue + 5, u22.creditValue, "HanMeimei creditValue error");
 
         let total = parseNULS(110);
         let income = total.times(50).div(1000);
-        let reward = income.times(50).div(1000);
+        let reward = income.times(50).div(1000); // 交易佣金+引荐奖励
+        if (!hasRefer) {
+            reward = reward.plus(parseNULS(100))
+        }
         assert.equal(b12.minus(b1).toString(10), reward.toString(10), "ref reward error");
 
         let platformIncome = BigInt(incomeTokens2['0-0'].value) - BigInt(incomeTokens['0-0'].value);
+        if (!hasRefer) {
+            reward = reward.minus(parseNULS(100))
+        }
         assert.equal(platformIncome.toString(), income.minus(reward).toString(10), "platformIncome error");
-
     });
 });

@@ -82,14 +82,15 @@ describe('ChainAsset', function () {
         }));
         // owner shipment
         await sdk.waitingResult(await bitsflea.connect(sdk.accountPri).shipments(orderId, "123456789"));
-        let [u1, u2, b1, b2, b3, b4, incomeTokens] = await Promise.all([
+        let [u1, u2, b1, b2, b3, b4, incomeTokens, g] = await Promise.all([
             bitsflea.getUser(sdk.sender),
             bitsflea.getUser(HanMeimei.sender),
             sdk.getAvailableBalance(alice.sender, 5, 1),
             sdk.getAvailableBalance(commissionAddr, 5, 1),
             point.balanceOf(sdk.sender),
             point.balanceOf(HanMeimei.sender),
-            bitsflea.getIncomeTokens()
+            bitsflea.getIncomeTokens(),
+            bitsflea.getGlobal()
         ]);
         // console.log("incomeTokens:", incomeTokens);
         // HanMeimei confirm receipt
@@ -110,8 +111,14 @@ describe('ChainAsset', function () {
 
         // trading point reward
         let pointReward = parseNULS(1).times(transactionAwardRate).div(1000);
-        assert.equal(b32.minus(b3).toString(10), pointReward.toString(), "owner point balance error");
-        assert.equal(b42.minus(b4).toString(10), pointReward.toString(), "HanMeimei point balance error");
+        if (g.tradeReward === "true") {
+            assert.equal(b32.minus(b3).toString(10), pointReward.toString(), "owner point balance error");
+            assert.equal(b42.minus(b4).toString(10), pointReward.toString(), "HanMeimei point balance error");
+        } else {
+            assert.equal(b32.minus(b3).toString(10), "0", "owner point balance error");
+            assert.equal(b42.minus(b4).toString(10), "0", "HanMeimei point balance error");
+        }
+
 
         let total = parseNULS(1.1);
         let income = total.times(50).div(1000);
