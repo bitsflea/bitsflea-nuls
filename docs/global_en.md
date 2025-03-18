@@ -1,12 +1,14 @@
 ### Global Parameters
+## I. Commission
+1. **Transaction Commission** `feeRate=500` – 5%.
+2. **Referral Commission** `refCommRate=4000` – 40%.
+
 ## I. Points and Rewards
-1. **Transaction Commission** `feeRate=50` – 5%.
-2. **Referral Commission** `refCommRate=50` – 5%.
-3. **Referral Reward** `refAward=100` – 100 BTF, determined by the referral reward pool.
-4. **Publish Product Reward** `publishAward=50` – 50 BTF, determined by the system reward pool.
-5. **Voting Reward** `voteAward=10` – 10 BTF, determined by the system reward pool.
-6. **Data Cleanup Reward** `clearAward=10` – 10 BTF, determined by the system reward pool.
-7. **The transaction reward "transactionAwardRate"**, is determined by the transaction currency transactionAwardRate parameter
+1. **Referral Reward** `refAward=100` – 100 BTF, determined by the referral reward pool.
+2. **Publish Product Reward** `publishAward=50` – 50 BTF, determined by the system reward pool.
+3. **Voting Reward** `voteAward=10` – 10 BTF, determined by the system reward pool.
+4. **Data Cleanup Reward** `clearAward=10` – 10 BTF, determined by the system reward pool.
+5. **The transaction reward "transactionAwardRate"**, is determined by the transaction currency transactionAwardRate parameter
 
 ## II. Credit Score
 1. **Base Credit Score** `creditBaseScore=500`
@@ -25,5 +27,5 @@
 1. **Minimum Number of Reviewers** `reviewMinCount=3`
 2. **Maximum Number of Reviewers per Arbitration** `arbitMaxCount=5`
 3. **Maximum Number of Reviewers** `reviewMaxCount=3000`
-4. **Reward for Reviewing a Product** `reviewSalaryProduct=50` – 50 BTF
-5. **Reward for Handling a Dispute** `reviewSalaryDispute=200` – 200 BTF
+4. **Reward for Reviewing a Product** `reviewSalaryProduct=50` – 50 BTF,determined by the salary pool.
+5. **Reward for Handling a Dispute** `reviewSalaryDispute=200` – 200 BTF,determined by the salary pool.
