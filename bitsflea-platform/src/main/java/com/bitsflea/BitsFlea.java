@@ -140,8 +140,8 @@ public class BitsFlea extends Ownable
 
     public BitsFlea(Address pointAddr) {
         global = new Global();
-        global.encryptKey = "0349252f2e857ffac203cfead86e0f5b4156465000aa6e4d25d56be7ccb705a19b";
-        global.commission = new Address("NULSd6Hgi72qSbAUm7PePnKnxcN1SkySVjUGM");
+        global.encryptKey = "026c51ef77f20de89defcb97a125921c637c06cbcfa0bd1d38e3506243333b007b";
+        global.commission = new Address("tNULSeBaMg3uA6d68rchxgu6a1jrGw1GQwkBBJ");
         phones = new HashMap<String, Boolean>();
         products = new HashMap<BigInteger, Product>();
         users = new HashMap<Address, User>();
