@@ -237,4 +237,18 @@ public interface IPlatform {
      * @return
      */
     Boolean getHasRefer(Address uid);
+
+    /**
+     * 设置系统佣金地址
+     * 
+     * @param addr
+     */
+    void setCommissionAddr(Address addr);
+
+    /**
+     * 设置加密公钥
+     * 
+     * @param key
+     */
+    void setEncryptKey(String key);
 }

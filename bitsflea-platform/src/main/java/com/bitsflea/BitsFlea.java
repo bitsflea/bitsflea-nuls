@@ -1633,4 +1633,14 @@ public class BitsFlea extends Ownable
             return hasRefer.get(uid);
         return false;
     }
+
+    public void setCommissionAddr(Address addr) {
+        onlyOwner();
+        global.commission = addr;
+    }
+
+    public void setEncryptKey(String key) {
+        onlyOwner();
+        global.encryptKey = key;
+    }
 }
